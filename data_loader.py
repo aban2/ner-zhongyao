@@ -8,6 +8,7 @@ def get_train_data():
 	fileList = os.listdir(path)
 
 	for idx, file in enumerate(fileList):
+		print(idx, 'a file')
 		name, suffix = os.path.splitext(file)
 		name = int(name)
 		entities = []
