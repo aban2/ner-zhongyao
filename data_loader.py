@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
+import pickle
 
 def get_train_data():
 	id2input = {}
@@ -8,7 +9,6 @@ def get_train_data():
 	fileList = os.listdir(path)
 
 	for idx, file in enumerate(fileList):
-		print(idx, 'a file')
 		name, suffix = os.path.splitext(file)
 		name = int(name)
 		entities = []
@@ -41,3 +41,8 @@ def get_train_data():
 				print('wrong match')
 
 	return id2input
+
+def load_pickle():
+	with open('data', 'rb') as f:
+		content = pickle.load(f)
+	return content
