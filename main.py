@@ -5,7 +5,7 @@ from torch.utils.data import TensorDataset, DataLoader, RandomSampler, Sequentia
 import sys
 
 train, valid, test = divide_dataset(load_pickle())
-#print(train[0])
+print(train)
 
 
 # get ints

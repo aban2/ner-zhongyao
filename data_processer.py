@@ -23,9 +23,9 @@ def divide_dataset(data):
 	data_list = np.array(data_list)
 	np.random.shuffle(data_list)
 
-	data_list = preprocessing(data_list)
+	q = preprocessing(data_list)
 
-	return data_list[0:900], data_list[900:950], data_list[950:]
+	return q[0:900], q[900:950], q[950:]
 
 def data2pixel(data):
 	with open('data', 'wb') as f:
