@@ -1,10 +1,10 @@
 from data_loader import get_train_data, load_pickle
-from data_processer import divide_dataset
+import data_processer
 from transformers import BertTokenizer, BertConfig, BertForTokenClassification, AdamW
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 import sys
 
-train, valid, test = divide_dataset(load_pickle())
+train, valid, test = data_processer.divide_dataset(load_pickle())
 print(train)
 
 
