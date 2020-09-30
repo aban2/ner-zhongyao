@@ -2,6 +2,19 @@ import numpy as np
 from data_loader import get_train_data
 import pickle
 
+def preprocessing(data_list):
+	sents, labels = [], []
+
+	for data in data_list:
+		sent_list = []
+		sent, label = data
+		for word in sent:
+			if word != ' ' and word != '.':
+				sent_list.append(word)
+		sents.append(sent_list)
+	return sents
+
+
 def divide_dataset(data):
 	np.random.seed(0)
 	data_list = []
@@ -9,6 +22,8 @@ def divide_dataset(data):
 		data_list.append(data[i])
 	data_list = np.array(data_list)
 	np.random.shuffle(data_list)
+
+	data_list = preprocessing(data_list)
 
 	return data_list[0:900], data_list[900:950], data_list[950:]
 

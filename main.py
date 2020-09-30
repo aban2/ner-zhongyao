@@ -5,10 +5,12 @@ from torch.utils.data import TensorDataset, DataLoader, RandomSampler, Sequentia
 import sys
 
 train, valid, test = divide_dataset(load_pickle())
+#print(train[0])
+
 
 # get ints
 tokenizer = BertTokenizer.from_pretrained('bert-base-chinese')
-train_padded = tokenizer(train_sentences, padding=True, truncation=True, is_split_into_words=True, return_tensors='pt')
-valid_padded = tokenizer(valid_sentences, padding=True, truncation=True, is_split_into_words=True, return_tensors='pt')
+
+padded_sents = tokenizer(train)
 
 # a change
