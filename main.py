@@ -1,24 +1,13 @@
 from data_loader import get_train_data, load_pickle
+from utils import get_label_dic
 import data_processer
 from transformers import BertTokenizer, BertConfig, BertForTokenClassification, AdamW
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 import sys
 
 train, valid, test = data_processer.divide_dataset(load_pickle())
-# print(train)
+id2label, label2id = get_label_dic(train[:,1])
 
-
-# get ints
+# get padded_data
 tokenizer = BertTokenizer.from_pretrained('bert-base-chinese')
-
-padded_train = []
-
-for idx, sample in enumerate(train[:,0]):
-	print(sample)
-	padded_sent = tokenizer(sample)
-	padded_train.append(padded_sent)
-	print(padded_sent)
-	break
-
-
-# a change
+padded_train_data, padded_train_labels = data_processer.padding(train, tokenizer, label2id)

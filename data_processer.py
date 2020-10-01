@@ -1,46 +1,33 @@
 import numpy as np
 from data_loader import get_train_data
 import pickle
+from time import time
 
-def preprocessing(data_list):
-	para2ints = {}
-	para_lengths = []
-	mx = 0
-	for idx, data in enumerate(data_list):
-		paragraph, tuples = data
+def padding(data, tokenizer, label2id):
+	data, labels = data[:,0], data[:,1]
 
-		#if len(paragraph) > 1000:
-			# print(paragraph)
-			# print(len(paragraph))
-			# print(idx)
+	data = list(data)
+	start_time = time()
 
-		last = 0
-		for idx2, word in enumerate(paragraph):
-			if word == ' ' or word == '。':
-				mx = max(mx, idx2-last)
-				last = idx2
+	t = tokenizer(data, padding=True, truncation=True, is_split_into_words=True, return_tensors='pt')
 
-	print(mxs)
+	print(time() - start_time)
 
-		#print('hi')
-			#break
+	print(type(data))
 
-		# process label
-		# idx2label = {}
-		# for tup in tuples:
-		# 	_, label, start, end, name = tup
-		# 	for i in range(start, end+1):
-		# 		idx2label[i] = label
+	# process data
+	padded_data = []
+	for idx, sample in enumerate(data):
+		padded_sent = tokenizer(sample, padding=True, truncation=True, is_split_into_words=True, return_tensors='pt')
+		padded_data.append(padded_sent)
 
-		# # process paragraph
-		# offset = 0
-		# for word in sent:
-		# 	if word != ' ' and word != '.':
-		# 		sent_list.append(word)
-		# sents.append(sent_list)
-	#return sents
-	return 0
+	# process labels
+	for tuples in labels:
+		for tup in tuples:
+			_, label, start, end, name = tup
 
+
+	return padded_data, 0
 
 def divide_dataset(data):
 	np.random.seed(0)
@@ -50,13 +37,12 @@ def divide_dataset(data):
 	data_list = np.array(data_list)
 	np.random.shuffle(data_list)
 
-	#data_list = preprocessing(data_list)
-
 	return data_list[0:900], data_list[900:950], data_list[950:]
 
 def data2pixel(data):
 	with open('data', 'wb') as f:
 		pickle.dump(data, f)
+
 
 if __name__ == '__main__':
 	for i in range(10, 15):
