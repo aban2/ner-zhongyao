@@ -1,6 +1,6 @@
 def get_label_dic(train_labels):
-	id2label = {0:'N', 1:'[PAD]'}
-	label2id = {'N':0, '[PAD]':1}
+	id2label = {0:'[PAD]', 1:'N'}
+	label2id = {'[PAD]':0, 'N':1}
 	ct = 2
 
 	for tuples in train_labels:

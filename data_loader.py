@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 import os
 import pandas as pd
 import numpy as np
@@ -14,11 +15,14 @@ def get_train_data():
 		entities = []
 		with open(path+'/'+file, encoding='utf-8') as f:
 			lines = f.read().splitlines()
+			#print(lines)
+
 			if suffix == '.txt':
 				if name in id2input:
 					id2input[name][0] = lines[0]
 				else:
 					id2input[name] = [lines[0], None]
+				#break
 			else:
 				for line in lines:
 					entity = []
@@ -46,3 +50,6 @@ def load_pickle():
 	with open('data', 'rb') as f:
 		content = pickle.load(f)
 	return content
+
+if __name__ == '__main__':
+	get_train_data()
