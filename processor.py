@@ -95,6 +95,8 @@ class Processor:
 				if (idx+1) % 100 == 0:
 					print('batch', idx+1, 'loss', losses/(idx+1))
 
+			print('Epoch', i, losses/len(train_dataloader))
+
 			if (i+1) % save_epoch == 0:
 				torch.save(model, 'Mod' + str(i+1))
 
