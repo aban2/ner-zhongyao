@@ -92,8 +92,8 @@ class Processor:
 				optimizer.step()
 				scheduler.step()
 
-				if (idx+1) % 100 == 0:
-					print('batch', idx+1, 'loss', losses/(idx+1))
+				# if (idx+1) % 100 == 0:
+				# 	print('batch', idx+1, 'loss', losses/(idx+1))
 
 			print('Epoch', i, losses/len(train_dataloader))
 
