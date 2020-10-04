@@ -1,9 +1,9 @@
-import numpy as np
-from data_loader import get_train_data
+import sys
 import torch
 import pickle
-import sys
+import numpy as np
 from time import time
+from data_loader import get_train_data
 
 def split_data(data):
 	data_list = []
@@ -51,7 +51,7 @@ def padding(data, tokenizer, label2id):
 			# process data
 			data = list(data)
 
-			labs = [label2id['N']]
+			labs = [label2id['O']]
 			yes_end = -1
 			yes_lab = -1
 
@@ -65,21 +65,24 @@ def padding(data, tokenizer, label2id):
 					if name != name2:
 						print('checking failed')
 						print(name, name2)
-						pass
+					labs.append(label2id['B_'+yes_lab])
 
-				if yes_end > 0:
-					labs.append(label2id[yes_lab])
+				elif yes_end > 0:
+					labs.append(label2id['I_'+yes_lab])
 
 				else:
-					labs.append(label2id['N'])
+					labs.append(label2id['O'])
 
 				if idx == yes_end:
 					yes_end = -1
 					yes_lab = -1
+					
 			offset += len(data)
 
-			labs.append(label2id['N'])	
+			labs.append(label2id['O'])
 			tk = tokenizer(data, is_split_into_words=True, truncation=True)
+
+			# print(tk)
 
 			if len(labs) != len(tk['input_ids']):
 				print("wrong match", len(labs), len(tk['input_ids']))
