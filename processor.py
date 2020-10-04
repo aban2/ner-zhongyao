@@ -34,7 +34,7 @@ class Processor:
 		dataloader = DataLoader(data, sampler=sampler, batch_size=batch_size)
 		return dataloader, followed
 
-	def train(self, train, num_epoches, max_grad_norm, batch_size):
+	def train(self, train, num_epoches, max_grad_norm, batch_size, save_epoch):
 		# get dataloader
 		train_dataloader, _ = self.data2loader(train, mode='train', batch_size=batch_size)
 
@@ -95,8 +95,8 @@ class Processor:
 				if (idx+1) % 100 == 0:
 					print('batch', idx+1, 'loss', losses/(idx+1))
 
-			if (i+1) % 25 == 0:
-				torch.save(model, 'Mod' + str(i+1))	
+			if (i+1) % save_epoch == 0:
+				torch.save(model, 'Mod' + str(i+1))
 
 		return model
 

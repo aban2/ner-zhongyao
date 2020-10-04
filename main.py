@@ -9,6 +9,6 @@ processor = Processor()#train=train)
 is_train = 1
 
 if is_train:
-	processor.train(train=train, num_epoches=100, max_grad_norm=1.0, batch_size=1)
+	processor.train(train=train, num_epoches=100, max_grad_norm=1.0, batch_size=1, save_epoch=20)
 else:
 	processor.evaluate('601', valid)

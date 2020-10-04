@@ -30,3 +30,8 @@ def load_label_dic():
 	with open('label_id_dic', 'rb') as f:
 		content = pickle.load(f)
 	return content
+
+if __name__ == '__main__':
+	a, content = load_label_dic()
+	print(content)
+	print(a)
