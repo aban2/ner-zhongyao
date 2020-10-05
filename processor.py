@@ -183,4 +183,4 @@ class Processor:
 					F1s.append(F1)
 
 			# print('Evaluation: F1', np.mean(F1s), 'loss', loss)
-			return F1, loss
+			return F1, loss.item()
