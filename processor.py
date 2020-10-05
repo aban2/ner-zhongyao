@@ -129,7 +129,7 @@ class Processor:
 			# process all data in one batch
 			F1s = []
 			last_correct, last_pred, last_true, last_F1 = 0, 0, 0, 0
-			print(len(followed), np.sum(followed))
+			# print(len(followed), np.sum(followed))
 			for idx, batch_data in enumerate(dataloader):
 				batch_data = tuple(i.to(self.device) for i in batch_data)
 				ids, masks, labels = batch_data
@@ -215,7 +215,7 @@ class Processor:
 							last_F1 = 2*(precision*recall) / (precision+recall)
 
 				F1s.append(last_F1)
-				print(len(F1s))
+				# print(len(F1s))
 
 			# print('Evaluation: F1', np.mean(F1s), 'loss', loss)
 			return F1, loss.item()
