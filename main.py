@@ -12,4 +12,4 @@ continue_train = 1
 if is_train:
 	processor.train(train=train, valid=valid, test=test, num_epoches=100, batch_size=1, save_epoch=20)
 else:
-	processor.evaluate(test, '80')
+	print(processor.evaluate(test, '80'))

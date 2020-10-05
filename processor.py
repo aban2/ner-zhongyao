@@ -218,4 +218,4 @@ class Processor:
 				# print(len(F1s))
 
 			# print('Evaluation: F1', np.mean(F1s), 'loss', loss)
-			return F1, loss.item()
+			return np.mean(F1s), loss.item()
