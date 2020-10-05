@@ -117,11 +117,7 @@ class Processor:
 		else:
 			model = self.model
 
-		print()
-
 		model.eval()
-		# print(model)
-
 		with torch.no_grad():
 			losses = 0
 			recalls, accs = [], []
