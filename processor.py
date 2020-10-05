@@ -34,7 +34,7 @@ class Processor:
 		dataloader = DataLoader(data, sampler=sampler, batch_size=batch_size)
 		return dataloader, followed
 
-	def train(self, train, valid, num_epoches, batch_size, save_epoch, max_grad_norm=1.0):
+	def train(self, train, valid, test, num_epoches, batch_size, save_epoch, max_grad_norm=1.0):
 		# get dataloader
 		train_dataloader, _ = self.data2loader(train, mode='train', batch_size=batch_size)
 
@@ -67,6 +67,7 @@ class Processor:
 		)
 
 		# training
+		top = 1.6
 		for i in range(num_epoches):
 			self.model.train()
 
@@ -93,10 +94,17 @@ class Processor:
 				# 	print('batch', idx+1, 'loss', losses/(idx+1))
 
 			F1, loss = self.evaluate(valid)
-			print('Epoch', i, losses/len(train_dataloader), loss, 'F1', F1)
+			F2, loss2 = self.evaluate(test)
+
+			if F1+F2 > top:
+				top = F1 + F2
+				torch.save(self.model, 'models/Mod' + str(i+1))
+				print('save new top', top)
+
+			print('Epoch', i, losses/len(train_dataloader), loss, 'F1', F1, F2)
 
 			if (i+1) % save_epoch == 0:
-				torch.save(model, 'models/Mod' + str(i+1))
+				torch.save(self.model, 'models/Mod' + str(i+1))
 
 		return model
 
@@ -109,6 +117,8 @@ class Processor:
 		else:
 			model = self.model
 
+		print()
+
 		model.eval()
 		# print(model)
 
@@ -118,6 +128,8 @@ class Processor:
 
 			# process all data in one batch
 			F1s = []
+			last_correct, last_pred, last_true, last_F1 = 0, 0, 0, 0
+			print(len(followed), np.sum(followed))
 			for idx, batch_data in enumerate(dataloader):
 				batch_data = tuple(i.to(self.device) for i in batch_data)
 				ids, masks, labels = batch_data
@@ -127,9 +139,9 @@ class Processor:
 				results = results*masks
 
 
-				for idx, result in enumerate(results):
+				for mdx, result in enumerate(results):
 
-					lenth = torch.sum(masks[idx]).item()
+					lenth = torch.sum(masks[mdx]).item()
 					# print(labels[idx][0:lenth+1])
 					# print()
 					# print(result[0:lenth+1])
@@ -137,7 +149,7 @@ class Processor:
 
 					channel_pred, channel_true = -1, -1
 					following, correct, total_pred, total_true = -1, 0, 0, 0
-					for jdx, (label_pred, label_true) in enumerate(zip(result, labels[idx])):
+					for jdx, (label_pred, label_true) in enumerate(zip(result, labels[mdx])):
 						label_true, label_pred = label_true.item(), label_pred.item()
 
 						# process total true
@@ -180,7 +192,30 @@ class Processor:
 						F1 = 0
 					else:
 						F1 = 2*(precision*recall) / (precision+recall)
-					F1s.append(F1)
+
+					if followed[mdx] == 0:
+						if mdx > 0:
+							F1s.append(last_F1)
+						last_correct, last_pred, last_true, last_F1 = correct, total_pred, total_true, F1
+					else:
+						last_correct += correct
+						last_true += total_true
+						last_pred += total_pred
+						if last_pred == 0:
+							precision = 0
+						else:
+							precision = last_correct / last_pred
+						if last_true == 0:
+							recall = 0
+						else:
+							recall = correct / last_true
+						if precision + recall == 0:
+							last_F1 = 0
+						else:
+							last_F1 = 2*(precision*recall) / (precision+recall)
+
+				F1s.append(last_F1)
+				print(len(F1s))
 
 			# print('Evaluation: F1', np.mean(F1s), 'loss', loss)
 			return F1, loss.item()

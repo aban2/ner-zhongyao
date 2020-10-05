@@ -47,7 +47,7 @@ def padding(data, tokenizer, label2id):
 			start2endlab[int(start)] = (int(end), label, name)
 
 		offset = 0
-		for idx, data in enumerate(data_list):
+		for mdx, data in enumerate(data_list):
 			# process data
 			data = list(data)
 
@@ -89,7 +89,7 @@ def padding(data, tokenizer, label2id):
 
 			data_list_to_pad.append(data)
 			labels_list_to_pad.append(labs)
-			if idx == 0:
+			if mdx == 0:
 				follow_indices.append(0)
 			else:
 				follow_indices.append(1)
