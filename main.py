@@ -6,10 +6,11 @@ train, valid, test = divide_dataset(load_pickle())
 
 processor = Processor()#train=train)
 
-is_train = 0
+is_train = 1
 continue_train = 1
 
 if is_train:
-	processor.train(train=train, valid=valid, test=test, num_epoches=100, batch_size=1, save_epoch=20)
+	processor.train(train=train, valid=valid, test=test, num_epoches=1, batch_size=1, save_epoch=20)
 else:
-	print(processor.evaluate(test, '80'))
+	print(processor.evaluate(valid, '500'))
+	# processor.predict('1001', '500')

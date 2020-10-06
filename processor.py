@@ -20,6 +20,7 @@ class Processor:
 			self.device = torch.device('cpu')
 			name = 'Cpu'
 		print('Running On', name)
+		# print(self.id2label)
 		self.model = BertForTokenClassification.from_pretrained("bert-base-chinese", num_labels=len(self.label2id)).to(self.device)
 
 	def data2loader(self, data, mode, batch_size):
@@ -106,11 +107,10 @@ class Processor:
 			if (i+1) % save_epoch == 0:
 				torch.save(self.model, 'models/Mod' + str(i+1))
 
-		return model
-
 	def evaluate(self, valid, epoch=None):
 		# get dataloader
-		dataloader, followed = self.data2loader(valid, 'valid', batch_size=1024)
+		batch_size = 64
+		dataloader, followed = self.data2loader(valid, 'valid', batch_size=batch_size)
 
 		if epoch != None:
 			model = torch.load('models/Mod' + epoch)
@@ -123,28 +123,28 @@ class Processor:
 			recalls, accs = [], []
 
 			# process all data in one batch
-			F1s = []
+			F1s, losses = [], []
 			last_correct, last_pred, last_true, last_F1 = 0, 0, 0, 0
+			crfs = 0
 			# print(len(followed), np.sum(followed))
 			for idx, batch_data in enumerate(dataloader):
+				# print(idx)
 				batch_data = tuple(i.to(self.device) for i in batch_data)
 				ids, masks, labels = batch_data
 				loss, logits = model(ids, attention_mask=masks, labels=labels) # loss and logits
 
+				losses.append(loss.item())
+
 				results = torch.argmax(logits, dim=2)
 				results = results*masks
-
+				# print(results.shape)
 
 				for mdx, result in enumerate(results):
-
 					lenth = torch.sum(masks[mdx]).item()
-					# print(labels[idx][0:lenth+1])
-					# print()
-					# print(result[0:lenth+1])
-					# print()
 
 					channel_pred, channel_true = -1, -1
 					following, correct, total_pred, total_true = -1, 0, 0, 0
+
 					for jdx, (label_pred, label_true) in enumerate(zip(result, labels[mdx])):
 						label_true, label_pred = label_true.item(), label_pred.item()
 
@@ -189,8 +189,9 @@ class Processor:
 					else:
 						F1 = 2*(precision*recall) / (precision+recall)
 
-					if followed[mdx] == 0:
-						if mdx > 0:
+					if followed[mdx+idx*batch_size] == 0:
+						if mdx+idx > 0:
+							# print(mdx+idx*batch_size)
 							F1s.append(last_F1)
 						last_correct, last_pred, last_true, last_F1 = correct, total_pred, total_true, F1
 					else:
@@ -210,8 +211,74 @@ class Processor:
 						else:
 							last_F1 = 2*(precision*recall) / (precision+recall)
 
-				F1s.append(last_F1)
-				# print(len(F1s))
 
+					# 	break
+					# break
+
+			F1s.append(last_F1)
+			# print(crfs)
 			# print('Evaluation: F1', np.mean(F1s), 'loss', loss)
-			return np.mean(F1s), loss.item()
+			# print(len(F1s))
+			return np.mean(F1s), np.mean(losses)
+	def predict(self, filename, epoch):
+		# read
+		with open('chusai_xuanshou/'+filename+'.txt', 'r', encoding='utf-8') as f:
+			content = f.read()
+		model = torch.load('models/Mod' + epoch)
+
+		# predict
+		content = list(content)
+		if len(content) > 510:
+			data_list = split_data(content)
+		else:
+			data_list = [content]
+
+		# print(data_list)
+
+		ret_str = ''
+		ct = 1
+		model.eval()
+		with torch.no_grad():
+			for data in data_list:
+				t = self.tokenizer(data, is_split_into_words=True, return_tensors='pt')
+				_, logits = model(t['input_ids'].to(self.device), attention_mask=t['attention_mask'].to(self.device), labels=t['token_type_ids'].to(self.device))
+				result = torch.argmax(logits, dim=2)
+				result = torch.squeeze(result, 1)
+				# extract entities
+				record = -1
+				record_pos = -1
+				entity = ""
+				# print(result.shape)
+				# print(result[0].shape)
+				print(result[0])
+
+				for idx, c in enumerate(result[0]):
+					word = self.tokenizer.decode(t['input_ids'][0][idx].item())
+					if record < 0 and c > 1 and c & 1:
+						entity += word
+						record = c-1
+						record_pos = idx
+					elif c == record:
+						entity += word
+					elif record > 1 and c != record:
+						ret_str += 'T' + str(ct) + '\t' + self.id2label[record.item()] + ' ' + str(record_pos) + ' ' + str(idx) + '\t' + entity + '\n'
+						# reset
+						ct += 1
+						entity = ''
+						if c > 1 and c & 1:
+							record_pos = idx
+							record = c-1
+						else:
+							record_pos = -1
+							record = -1
+
+		print(ret_str)
+
+		# write ann
+
+if __name__ == '__main__':
+	filename = '1000'
+	with open('chusai_xuanshou/'+filename+'.txt', 'r', encoding='utf-8') as f:
+		content = f.read()
+
+	print(content)

@@ -32,6 +32,7 @@ def padding(data, tokenizer, label2id):
 	labels_list_to_pad = []
 
 	for tup in data:
+		# print(tup)
 		# print('new data!')
 		data, labels = tup
 
@@ -59,6 +60,11 @@ def padding(data, tokenizer, label2id):
 			for idx, c in enumerate(data):
 				if c == ' ' or c == '　':
 					continue
+
+				if idx == yes_end:
+					yes_end = -1
+					yes_lab = -1
+
 				if (idx + offset) in start2endlab:
 					yes_end, yes_lab, name = start2endlab[idx+offset]
 					name2 = ''.join(data[idx:yes_end-offset])
@@ -72,15 +78,15 @@ def padding(data, tokenizer, label2id):
 
 				else:
 					labs.append(label2id['O'])
-
-				if idx == yes_end:
-					yes_end = -1
-					yes_lab = -1
 					
 			offset += len(data)
 
 			labs.append(label2id['O'])
 			tk = tokenizer(data, is_split_into_words=True, truncation=True)
+
+			# print(labs)
+			# print(labels)
+			# sys.exit()
 
 			# print(tk)
 
@@ -94,9 +100,13 @@ def padding(data, tokenizer, label2id):
 			else:
 				follow_indices.append(1)
 
+	# print(labels_list_to_pad)
+
 	padded_data = tokenizer(data_list_to_pad, padding=True, truncation=True, is_split_into_words=True, return_tensors='pt')
 	longest_len = padded_data['input_ids'].shape[1]
 	padded_labels = []
+
+	# print(labs)
 
 	for idx, lab in enumerate(labels_list_to_pad):
 		lab.extend([label2id['[PAD]']]*(longest_len-len(lab)))
