@@ -69,7 +69,7 @@ class Processor:
 		)
 
 		# training
-		top = 1.2
+		top = 1.3
 		for i in range(num_epoches):
 			self.model.train()
 
