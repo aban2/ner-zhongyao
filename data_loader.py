@@ -6,7 +6,7 @@ import pickle
 
 def get_train_data():
 	id2input = {}
-	path = 'train'
+	path = 'train_data'
 	fileList = os.listdir(path)
 
 	for idx, file in enumerate(fileList):
@@ -18,6 +18,8 @@ def get_train_data():
 			#print(lines)
 
 			if suffix == '.txt':
+				# print(lines[0])
+
 				if name in id2input:
 					id2input[name][0] = lines[0]
 				else:

@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 import sys
 import torch
 import pickle
@@ -27,6 +28,7 @@ def split_data(data):
 
 def padding(data, tokenizer, label2id):
 	# init ds
+	space = ','
 	follow_indices = []
 	data_list_to_pad = []
 	labels_list_to_pad = []
@@ -49,7 +51,10 @@ def padding(data, tokenizer, label2id):
 
 		offset = 0
 		for mdx, data in enumerate(data_list):
-			# process data
+
+			data = data.replace(' ', space).replace('　', space)
+			# print(data)
+
 			data = list(data)
 
 			labs = [label2id['O']]
@@ -83,12 +88,6 @@ def padding(data, tokenizer, label2id):
 
 			labs.append(label2id['O'])
 			tk = tokenizer(data, is_split_into_words=True, truncation=True)
-
-			# print(labs)
-			# print(labels)
-			# sys.exit()
-
-			# print(tk)
 
 			if len(labs) != len(tk['input_ids']):
 				print("wrong match", len(labs), len(tk['input_ids']))
@@ -131,8 +130,4 @@ def data2pixel(data):
 		pickle.dump(data, f)
 
 if __name__ == '__main__':
-	t = 5
-	for i in range(t):
-		if t > 3:
-			t = 3
-		print(i)
+	pass

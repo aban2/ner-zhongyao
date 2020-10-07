@@ -1,7 +1,8 @@
+# -*- coding:utf-8 -*-
 import sys
 import torch
 import numpy as np
-from data_processer import padding
+from data_processer import padding, split_data
 from utils import get_label_dic, load_label_dic
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 from transformers import BertTokenizer, BertConfig, BertForTokenClassification, AdamW, get_linear_schedule_with_warmup
@@ -227,6 +228,8 @@ class Processor:
 		model = torch.load('models/Mod' + epoch)
 
 		# predict
+		space = ','
+		content = content.replace(' ', space).replace('　', space)
 		content = list(content)
 		if len(content) > 510:
 			data_list = split_data(content)
@@ -238,21 +241,40 @@ class Processor:
 		ret_str = ''
 		ct = 1
 		model.eval()
+		para_offset = 0
+		offsets = []
+		space_ct = -1
+
+		# calculate offset
+		for c in content:
+			if c == ' ' or c == '　':
+				space_ct += 1
+			else:
+				offsets.append(space_ct)
+
 		with torch.no_grad():
-			for data in data_list:
+			for kdx, data in enumerate(data_list):
 				t = self.tokenizer(data, is_split_into_words=True, return_tensors='pt')
 				_, logits = model(t['input_ids'].to(self.device), attention_mask=t['attention_mask'].to(self.device), labels=t['token_type_ids'].to(self.device))
 				result = torch.argmax(logits, dim=2)
-				result = torch.squeeze(result, 1)
+				result = torch.squeeze(result, 0)
 				# extract entities
 				record = -1
 				record_pos = -1
 				entity = ""
 				# print(result.shape)
 				# print(result[0].shape)
-				print(result[0])
+				# print(result[0])
+				# print(''.join(content))
+				# print(offsets)
+				# print()
 
-				for idx, c in enumerate(result[0]):
+				# for idx, c in enumerate(result):
+				# 	word = self.tokenizer.decode(t['input_ids'][0][idx].item())
+				# 	print(word, end='')
+				# print()
+
+				for idx, c in enumerate(result):
 					word = self.tokenizer.decode(t['input_ids'][0][idx].item())
 					if record < 0 and c > 1 and c & 1:
 						entity += word
@@ -261,18 +283,34 @@ class Processor:
 					elif c == record:
 						entity += word
 					elif record > 1 and c != record:
-						ret_str += 'T' + str(ct) + '\t' + self.id2label[record.item()] + ' ' + str(record_pos) + ' ' + str(idx) + '\t' + entity + '\n'
+						extra = '\n'
+						if ret_str == '':
+							extra = ''
+						offset = offsets[record_pos+para_offset] + para_offset
+
+						new_start, new_end = record_pos+offset, idx+offset
+						real_entity = ''.join(content[new_start:new_end])
+						ret_str += extra + 'T' + str(ct) + '\t' + self.id2label[record.item()] + ' ' + str(new_start) + ' ' + str(new_end) + '\t' + real_entity
+						if entity != real_entity and ' ' not in real_entity and '　' not in real_entity and '[ U N K ]' not in entity:
+							print('wrong', filename)
+							print(entity)
+							print(real_entity)
+							return
+						# print(new_start, new_end, offset, ''.join(content[new_start:new_end]))
 						# reset
 						ct += 1
-						entity = ''
 						if c > 1 and c & 1:
 							record_pos = idx
 							record = c-1
+							entity = word
 						else:
 							record_pos = -1
 							record = -1
+							entity = ''
+				para_offset += result.shape[0]-2
 
-		print(ret_str)
+		# print(ret_str)
+		return ret_str
 
 		# write ann
 
