@@ -95,7 +95,9 @@ class Processor:
 				# if (idx+1) % 100 == 0:
 				# 	print('batch', idx+1, 'loss', losses/(idx+1))
 
-			F0, _ = self.evaluate(train)
+			F0 = None
+			if (i+1) % 10 == 0:
+				F0, _ = self.evaluate(train)
 			F1, loss = self.evaluate(valid)
 			F2, loss2 = self.evaluate(test)
 
@@ -104,7 +106,7 @@ class Processor:
 				torch.save(self.model, 'models/Mod' + str(i+1))
 				print('save new top', top)
 
-			print('Epoch', i, losses/len(train_dataloader), loss, 'F1', F0, F1, F2)
+			print('Epoch', i, losses/len(train_dataloader), loss, 'F1', F1, F2, F0)
 
 			if (i+1) % save_epoch == 0:
 				torch.save(self.model, 'models/Mod' + str(i+1))
