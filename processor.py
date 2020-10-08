@@ -8,7 +8,7 @@ from torch.utils.data import TensorDataset, DataLoader, RandomSampler, Sequentia
 from transformers import BertTokenizer, BertConfig, BertForTokenClassification, AdamW, get_linear_schedule_with_warmup
 
 class Processor:
-	def __init__(self, load=None, train=None):
+	def __init__(self, load=0, train=None):
 		self.tokenizer = BertTokenizer.from_pretrained('bert-base-chinese')
 		if train != None:
 			self.label2id, self.id2label = get_label_dic(train[:,1])
@@ -22,10 +22,12 @@ class Processor:
 			name = 'Cpu'
 		print('Running On', name)
 		# print(self.id2label)
-		if load == None:
+		if load > 0:
 			self.model = BertForTokenClassification.from_pretrained("bert-base-chinese", num_labels=len(self.label2id)).to(self.device)
 		else:
 			self.model = torch.load('models/Mod' + str(load))
+		self.epoch_ct = load
+
 
 	def data2loader(self, data, mode, batch_size):
 		padded_data, padded_labels, followed = padding(data, self.tokenizer, self.label2id)
@@ -106,13 +108,13 @@ class Processor:
 
 			if F1+F2 > top:
 				top = F1 + F2
-				torch.save(self.model, 'models/Mod' + str(i+1))
+				torch.save(self.model, 'models/Mod' + str(i+self.epoch_ct+1))
 				print('save new top', top)
 
-			print('Epoch', i, losses/len(train_dataloader), loss, 'F1', F1, F2, F0)
+			print('Epoch', i+self.epoch_ct, losses/len(train_dataloader), loss, 'F1', F1, F2, F0)
 
 			if (i+1) % save_epoch == 0:
-				torch.save(self.model, 'models/Mod' + str(i+1))
+				torch.save(self.model, 'models/Mod' + str(i+self.epoch_ct+1))
 
 	def evaluate(self, valid, epoch=None):
 		# get dataloader
