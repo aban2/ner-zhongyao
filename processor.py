@@ -2,6 +2,7 @@
 import sys
 import torch
 import numpy as np
+from time import time
 from data_processer import padding, split_data
 from utils import get_label_dic, load_label_dic
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
@@ -75,6 +76,7 @@ class Processor:
 
 		# training
 		top = 1.3
+		start_time = time()
 		for i in range(num_epoches):
 			self.model.train()
 
@@ -101,7 +103,7 @@ class Processor:
 				# 	print('batch', idx+1, 'loss', losses/(idx+1))
 
 			F0 = None
-			if (i+1) % 10 == 0:
+			if (i+1) % 2 == 0:
 				F0, _ = self.evaluate(train)
 			F1, loss = self.evaluate(valid)
 			F2, loss2 = self.evaluate(test)
@@ -111,10 +113,11 @@ class Processor:
 				torch.save(self.model, 'models/Mod' + str(i+self.epoch_ct+1))
 				print('save new top', top)
 
-			print('Epoch', i+self.epoch_ct, losses/len(train_dataloader), loss, 'F1', F1, F2, F0)
+			print('Epoch', i+self.epoch_ct, losses/len(train_dataloader), loss, 'F1', F1, F2, F0, time()-start_time)
 
 			if (i+1) % save_epoch == 0:
 				torch.save(self.model, 'models/Mod' + str(i+self.epoch_ct+1))
+			start_time = time()
 
 	def evaluate(self, valid, epoch=None):
 		# get dataloader
