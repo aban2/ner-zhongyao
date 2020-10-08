@@ -27,6 +27,7 @@ class Processor:
 			self.model = BertForTokenClassification.from_pretrained("bert-base-chinese", num_labels=len(self.label2id)).to(self.device)
 		else:
 			self.model = torch.load('models/Mod' + str(load))
+			print('load success')
 		self.epoch_ct = load
 
 
@@ -103,7 +104,7 @@ class Processor:
 				# 	print('batch', idx+1, 'loss', losses/(idx+1))
 
 			F0 = None
-			if (i+1) % 2 == 0:
+			if (i+1) % 5 == 0:
 				F0, _ = self.evaluate(train)
 			F1, loss = self.evaluate(valid)
 			F2, loss2 = self.evaluate(test)
