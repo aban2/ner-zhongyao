@@ -23,7 +23,7 @@ class Processor:
 			name = 'Cpu'
 		print('Running On', name)
 		# print(self.id2label)
-		if load > 0:
+		if load == 0:
 			self.model = BertForTokenClassification.from_pretrained("bert-base-chinese", num_labels=len(self.label2id)).to(self.device)
 		else:
 			self.model = torch.load('models/Mod' + str(load))
