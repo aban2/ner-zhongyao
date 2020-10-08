@@ -8,7 +8,7 @@ from torch.utils.data import TensorDataset, DataLoader, RandomSampler, Sequentia
 from transformers import BertTokenizer, BertConfig, BertForTokenClassification, AdamW, get_linear_schedule_with_warmup
 
 class Processor:
-	def __init__(self, train=None):
+	def __init__(self, load=None, train=None):
 		self.tokenizer = BertTokenizer.from_pretrained('bert-base-chinese')
 		if train != None:
 			self.label2id, self.id2label = get_label_dic(train[:,1])
@@ -22,7 +22,10 @@ class Processor:
 			name = 'Cpu'
 		print('Running On', name)
 		# print(self.id2label)
-		self.model = BertForTokenClassification.from_pretrained("bert-base-chinese", num_labels=len(self.label2id)).to(self.device)
+		if load == None:
+			self.model = BertForTokenClassification.from_pretrained("bert-base-chinese", num_labels=len(self.label2id)).to(self.device)
+		else:
+			self.model = torch.load('models/Mod' + str(load))
 
 	def data2loader(self, data, mode, batch_size):
 		padded_data, padded_labels, followed = padding(data, self.tokenizer, self.label2id)
@@ -215,14 +218,10 @@ class Processor:
 						else:
 							last_F1 = 2*(precision*recall) / (precision+recall)
 
-
 					# 	break
 					# break
 
 			F1s.append(last_F1)
-			# print(crfs)
-			# print('Evaluation: F1', np.mean(F1s), 'loss', loss)
-			# print(len(F1s))
 			return np.mean(F1s), np.mean(losses)
 	def predict(self, filename, epoch):
 		# read
@@ -255,6 +254,8 @@ class Processor:
 			else:
 				offsets.append(space_ct)
 
+		stop_words = ['.', ',', '(', ')', '。', '，','、', '（','）']
+		crfs = 0
 		with torch.no_grad():
 			for kdx, data in enumerate(data_list):
 				t = self.tokenizer(data, is_split_into_words=True, return_tensors='pt')
@@ -265,17 +266,6 @@ class Processor:
 				record = -1
 				record_pos = -1
 				entity = ""
-				# print(result.shape)
-				# print(result[0].shape)
-				# print(result[0])
-				# print(''.join(content))
-				# print(offsets)
-				# print()
-
-				# for idx, c in enumerate(result):
-				# 	word = self.tokenizer.decode(t['input_ids'][0][idx].item())
-				# 	print(word, end='')
-				# print()
 
 				for idx, c in enumerate(result):
 					word = self.tokenizer.decode(t['input_ids'][0][idx].item())
@@ -286,15 +276,35 @@ class Processor:
 					elif c == record:
 						entity += word
 					elif record > 1 and c != record:
+						# check crf:
+						if c > 1 and (c & 1 == 0):
+							print(result)
+							crfs = 1
+							print('wrong crf')
+							return
+
 						extra = '\n'
 						if ret_str == '':
 							extra = ''
 						offset = offsets[record_pos+para_offset] + para_offset
-
 						new_start, new_end = record_pos+offset, idx+offset
 						real_entity = ''.join(content[new_start:new_end])
-						ret_str += extra + 'T' + str(ct) + '\t' + self.id2label[record.item()] + ' ' + str(new_start) + ' ' + str(new_end) + '\t' + real_entity
-						if entity != real_entity and ' ' not in real_entity and '　' not in real_entity and '[ U N K ]' not in entity:
+
+						# truncate
+						truc_entity = ""
+						truncation = -1
+						for qdx, q in enumerate(real_entity):
+							if q in stop_words:
+								truncation = qdx
+								break
+						if truncation > 0:
+							new_end = new_start+truncation
+							real_entity = real_entity[0:truncation]
+
+						# if truncation > 0:
+							# print('hi')
+						ret_str += extra + 'T' + str(ct) + '\t' + self.id2label[record.item()][2:] + ' ' + str(new_start) + ' ' + str(new_end) + '\t' + real_entity
+						if truncation < 0 and entity != real_entity and ' ' not in real_entity and '　' not in real_entity and '[ U N K ]' not in entity:
 							print('wrong', filename)
 							print(entity)
 							print(real_entity)
