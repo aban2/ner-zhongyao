@@ -55,5 +55,3 @@ def load_pickle():
 
 if __name__ == '__main__':
 	get_train_data()
-
-fsdlkjfladskjfldchange
