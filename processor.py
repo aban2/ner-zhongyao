@@ -75,6 +75,11 @@ class Processor:
 		    num_training_steps=total_steps
 		)
 
+		# torch.save(optimizer, 'models/Opt' + str(0+self.epoch_ct+1))
+		# torch.save(scheduler, 'models/Sch' + str(0+self.epoch_ct+1))
+
+		# sys.exit()
+
 		# training
 		top = 1.3
 		start_time = time()
@@ -116,8 +121,8 @@ class Processor:
 
 			print('Epoch', i+self.epoch_ct, losses/len(train_dataloader), loss, 'F1', F1, F2, F0, time()-start_time)
 
-			if (i+1) % save_epoch == 0:
-				torch.save(self.model, 'models/Mod' + str(i+self.epoch_ct+1))
+			# if (i+1) % save_epoch == 0:
+			torch.save(self.model, 'models/Mod' + str(i+self.epoch_ct+1))
 			start_time = time()
 
 	def evaluate(self, valid, epoch=None):
@@ -260,7 +265,7 @@ class Processor:
 			else:
 				offsets.append(space_ct)
 
-		stop_words = ['.', ',', '(', ')', '。', '，','、', '（','）']
+		stop_words = ['.', ',', '(', ')', '。', '，','、', '（','）', ':', '：']
 		crfs = 0
 		with torch.no_grad():
 			for kdx, data in enumerate(data_list):
@@ -283,11 +288,11 @@ class Processor:
 						entity += word
 					elif record > 1 and c != record:
 						# check crf:
-						if c > 1 and (c & 1 == 0):
-							print(result)
-							crfs = 1
-							print('wrong crf')
-							return
+						# if c > 1 and (c & 1 == 0):
+						# 	print(result)
+						# 	crfs = 1
+						# 	print('wrong crf')
+						# 	return
 
 						extra = '\n'
 						if ret_str == '':
