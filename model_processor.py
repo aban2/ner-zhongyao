@@ -79,10 +79,6 @@ class Processor:
 		    last_epoch=self.load
 		)
 
-		# torch.save(scheduler, 'models/Sch' + str(0+self.epoch_ct+1))
-
-		# sys.exit()
-
 		# training
 		top = 1.3
 		start_time = time()
@@ -124,7 +120,7 @@ class Processor:
 
 			if (i+1) % save_epoch == 0:
 				torch.save(self.model, 'models/Mod' + str(i+self.epoch_ct+1))
-				torch.save(self.optimizer, 'models/Opt' + str(0+self.epoch_ct+1))
+				torch.save(self.optimizer, 'models/Opt' + str(i+self.epoch_ct+1))
 			start_time = time()
 
 	def evaluate(self, valid, epoch=None):
