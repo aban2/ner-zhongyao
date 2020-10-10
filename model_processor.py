@@ -72,7 +72,9 @@ class Processor:
 		    eps=1e-8
 		)
 
-		self.optimizer.load_state_dict(torch.load('models/Opt' + str(self.load)))
+		if self.load > 0:
+			self.optimizer.load_state_dict(torch.load('models/Opt' + str(self.load)))
+			print('load optimizer success')
 		
 		total_steps = 5000#len(train_dataloader) * num_epoches
 		scheduler = get_linear_schedule_with_warmup(
