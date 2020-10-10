@@ -111,7 +111,7 @@ class Processor:
 			scheduler.step()
 
 			F0 = None
-			if (i+1) % 5 == 0:
+			if (i+1) % 20 == 0:
 				F0, _ = self.evaluate(train)
 			F1, loss = self.evaluate(valid)
 			F2, loss2 = self.evaluate(test)
