@@ -53,6 +53,8 @@ class Processor:
 
 		if load < 0:
 			self.epoch_ct = load+1
+		else:
+			self.epoch_ct = load
 
 
 	def data2loader(self, data, mode, batch_size):
