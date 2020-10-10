@@ -9,8 +9,9 @@ from torch.utils.data import TensorDataset, DataLoader, RandomSampler, Sequentia
 from transformers import BertTokenizer, BertConfig, BertForTokenClassification, AdamW, get_linear_schedule_with_warmup
 
 class Processor:
-	def __init__(self, load=0, train=None):
+	def __init__(self, load=-1, train=None):
 		self.tokenizer = BertTokenizer.from_pretrained('bert-base-chinese')
+		self.load = load
 		if train != None:
 			self.label2id, self.id2label = get_label_dic(train[:,1])
 		else:
@@ -23,11 +24,35 @@ class Processor:
 			name = 'Cpu'
 		print('Running On', name)
 		# print(self.id2label)
-		if load == 0:
+		if load < 0:
 			self.model = BertForTokenClassification.from_pretrained("bert-base-chinese", num_labels=len(self.label2id)).to(self.device)
+			# optimizer and scheduler
+			FULL_FINETUNING = True
+			if FULL_FINETUNING:
+			    param_optimizer = list(self.model.named_parameters())
+			    no_decay = ['bias', 'gamma', 'beta']
+			    optimizer_grouped_parameters = [
+			        {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
+			         'weight_decay_rate': 0.01},
+			        {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
+			         'weight_decay_rate': 0.0}
+			    ]
+			else:
+			    param_optimizer = list(model.classifier.named_parameters())
+			    optimizer_grouped_parameters = [{"params": [p for n, p in param_optimizer]}]
+		self.optimizer = AdamW(
+		    optimizer_grouped_parameters,
+		    lr=3e-5,
+		    eps=1e-8
+		)
+
 		else:
 			self.model = torch.load('models/Mod' + str(load))
+			self.optimizer = torch.load('models/Opt' + str(load))
 			print('load success')
+
+
+
 		self.epoch_ct = load
 
 
@@ -46,36 +71,15 @@ class Processor:
 	def train(self, train, valid, test, num_epoches, batch_size, save_epoch, max_grad_norm=1.0):
 		# get dataloader
 		train_dataloader, _ = self.data2loader(train, mode='train', batch_size=batch_size)
-
-		# optimizer and scheduler
-		FULL_FINETUNING = True
-		if FULL_FINETUNING:
-		    param_optimizer = list(self.model.named_parameters())
-		    no_decay = ['bias', 'gamma', 'beta']
-		    optimizer_grouped_parameters = [
-		        {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
-		         'weight_decay_rate': 0.01},
-		        {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
-		         'weight_decay_rate': 0.0}
-		    ]
-		else:
-		    param_optimizer = list(model.classifier.named_parameters())
-		    optimizer_grouped_parameters = [{"params": [p for n, p in param_optimizer]}]
-
-		optimizer = AdamW(
-		    optimizer_grouped_parameters,
-		    lr=3e-5,
-		    eps=1e-8
-		)
-
-		total_steps = len(train_dataloader) * num_epoches
+		
+		total_steps = 5000#len(train_dataloader) * num_epoches
 		scheduler = get_linear_schedule_with_warmup(
-		    optimizer,
-		    num_warmup_steps=0,
-		    num_training_steps=total_steps
+		    self.optimizer,
+		    num_warmup_steps=0,	
+		    num_training_steps=total_steps,
+		    last_epoch=self.load
 		)
 
-		# torch.save(optimizer, 'models/Opt' + str(0+self.epoch_ct+1))
 		# torch.save(scheduler, 'models/Sch' + str(0+self.epoch_ct+1))
 
 		# sys.exit()
@@ -102,11 +106,9 @@ class Processor:
 				# tackle exploding gradients
 				torch.nn.utils.clip_grad_norm_(parameters=self.model.parameters(), max_norm=max_grad_norm)
 
-				optimizer.step()
-				scheduler.step()
+				self.optimizer.step()
 
-				# if (idx+1) % 100 == 0:
-				# 	print('batch', idx+1, 'loss', losses/(idx+1))
+			scheduler.step()
 
 			F0 = None
 			if (i+1) % 5 == 0:
@@ -121,8 +123,9 @@ class Processor:
 
 			print('Epoch', i+self.epoch_ct, losses/len(train_dataloader), loss, 'F1', F1, F2, F0, time()-start_time)
 
-			# if (i+1) % save_epoch == 0:
-			torch.save(self.model, 'models/Mod' + str(i+self.epoch_ct+1))
+			if (i+1) % save_epoch == 0:
+				torch.save(self.model, 'models/Mod' + str(i+self.epoch_ct+1))
+				torch.save(self.optimizer, 'models/Opt' + str(0+self.epoch_ct+1))
 			start_time = time()
 
 	def evaluate(self, valid, epoch=None):
