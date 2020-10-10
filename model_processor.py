@@ -40,20 +40,19 @@ class Processor:
 			else:
 			    param_optimizer = list(model.classifier.named_parameters())
 			    optimizer_grouped_parameters = [{"params": [p for n, p in param_optimizer]}]
-		self.optimizer = AdamW(
-		    optimizer_grouped_parameters,
-		    lr=3e-5,
-		    eps=1e-8
-		)
+			self.optimizer = AdamW(
+			    optimizer_grouped_parameters,
+			    lr=3e-5,
+			    eps=1e-8
+			)
 
 		else:
 			self.model = torch.load('models/Mod' + str(load))
 			self.optimizer = torch.load('models/Opt' + str(load))
 			print('load success')
 
-
-
-		self.epoch_ct = load
+		if load < 0:
+			self.epoch_ct = load+1
 
 
 	def data2loader(self, data, mode, batch_size):
