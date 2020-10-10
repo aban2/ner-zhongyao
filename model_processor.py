@@ -48,6 +48,7 @@ class Processor:
 			# print('busui')
 		dataloader = DataLoader(data, sampler=sampler, batch_size=batch_size)
 		return dataloader, followed
+		
 
 	def train(self, train, valid, test, num_epoches, batch_size, save_epoch, max_grad_norm=1.0):
 		# get dataloader

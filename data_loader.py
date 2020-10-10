@@ -9,6 +9,9 @@ def get_train_data():
 	path = 'train_data'
 	fileList = os.listdir(path)
 
+	# dds = 0 
+	# cs = 0
+
 	for idx, file in enumerate(fileList):
 		name, suffix = os.path.splitext(file)
 		name = int(name)
@@ -19,12 +22,13 @@ def get_train_data():
 
 			if suffix == '.txt':
 				# print(lines[0])
+				# cs += len(lines[0])
 
 				if name in id2input:
 					id2input[name][0] = lines[0]
 				else:
 					id2input[name] = [lines[0], None]
-				#break
+				
 			else:
 				for line in lines:
 					entity = []
@@ -34,6 +38,9 @@ def get_train_data():
 					entity.extend(mid)
 					entity.append(s1[2])
 					entities.append(entity)
+
+					# dds += len(s1[2])
+ 
 				if name in id2input:
 					id2input[name][1] = entities
 				else:
@@ -46,6 +53,8 @@ def get_train_data():
 			if name != text[start:end]:
 				print('wrong match')
 
+	# print(dds)
+	# print(cs)
 	return id2input
 
 def load_pickle():
