@@ -26,29 +26,9 @@ class Processor:
 		# print(self.id2label)
 		if load < 0:
 			self.model = BertForTokenClassification.from_pretrained("bert-base-chinese", num_labels=len(self.label2id)).to(self.device)
-			# optimizer and scheduler
-			FULL_FINETUNING = True
-			if FULL_FINETUNING:
-			    param_optimizer = list(self.model.named_parameters())
-			    no_decay = ['bias', 'gamma', 'beta']
-			    optimizer_grouped_parameters = [
-			        {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
-			         'weight_decay_rate': 0.01},
-			        {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
-			         'weight_decay_rate': 0.0}
-			    ]
-			else:
-			    param_optimizer = list(model.classifier.named_parameters())
-			    optimizer_grouped_parameters = [{"params": [p for n, p in param_optimizer]}]
-			self.optimizer = AdamW(
-			    optimizer_grouped_parameters,
-			    lr=3e-5,
-			    eps=1e-8
-			)
 
 		else:
 			self.model = torch.load('models/Mod' + str(load))
-			self.optimizer = torch.load('models/Opt' + str(load))
 			print('load success')
 
 		if load < 0:
@@ -72,6 +52,27 @@ class Processor:
 	def train(self, train, valid, test, num_epoches, batch_size, save_epoch, max_grad_norm=1.0):
 		# get dataloader
 		train_dataloader, _ = self.data2loader(train, mode='train', batch_size=batch_size)
+		# optimizer and scheduler
+		FULL_FINETUNING = True
+		if FULL_FINETUNING:
+		    param_optimizer = list(self.model.named_parameters())
+		    no_decay = ['bias', 'gamma', 'beta']
+		    optimizer_grouped_parameters = [
+		        {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
+		         'weight_decay_rate': 0.01},
+		        {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
+		         'weight_decay_rate': 0.0}
+		    ]
+		else:
+		    param_optimizer = list(model.classifier.named_parameters())
+		    optimizer_grouped_parameters = [{"params": [p for n, p in param_optimizer]}]
+		self.optimizer = AdamW(
+		    optimizer_grouped_parameters,
+		    lr=3e-5,
+		    eps=1e-8
+		)
+
+		self.optimizer.load_state_dict(torch.load('models/Opt' + str(self.load)))
 		
 		total_steps = 5000#len(train_dataloader) * num_epoches
 		scheduler = get_linear_schedule_with_warmup(
@@ -122,7 +123,7 @@ class Processor:
 
 			if (i+1) % save_epoch == 0:
 				torch.save(self.model, 'models/Mod' + str(i+self.epoch_ct+1))
-				torch.save(self.optimizer, 'models/Opt' + str(i+self.epoch_ct+1))
+				torch.save(self.optimizer.state_dict(), 'models/Opt' + str(i+self.epoch_ct+1))
 			start_time = time()
 
 	def evaluate(self, valid, epoch=None):

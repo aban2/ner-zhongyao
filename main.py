@@ -4,7 +4,10 @@ from model_processor import Processor
 
 train, valid, test = divide_dataset(get_train_data())
 
-processor = Processor()#load=0)#train=train)
+processor = Processor(load=200)#train=train)
+print(processor)
+import sys
+sys.exit()
 
 is_train = 0
 
