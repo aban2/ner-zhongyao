@@ -1,13 +1,20 @@
 from data_loader import get_train_data, load_pickle
 from data_processer import divide_dataset
 from model_processor import Processor
+import bertcrf
+
 
 train, valid, test = divide_dataset(get_train_data())
 
-processor = Processor(load=200)#train=train)
+processor = Processor()#load=200)#train=train)
 print(processor)
-import sys
-sys.exit()
+
+# args = {
+# 	is_train=1,
+# 	batch_size=16,
+# 	save_epoch=100,
+# 	max_norm=max_grad_norm=1.0
+# }
 
 is_train = 0
 
