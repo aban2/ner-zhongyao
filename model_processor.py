@@ -218,7 +218,7 @@ class Processor:
 	def evaluate(self, valid):
 		# get dataloader
 		batch_size = 64
-		dataloader, followed = self.data2loader(self.args['valid'], 'valid', batch_size=self.args['batch_size'])
+		dataloader, followed = self.data2loader(self.args['valid'], 'valid', batch_size=batch_size)
 
 		self.model.eval()
 		with torch.no_grad():
@@ -235,7 +235,6 @@ class Processor:
 				batch_data = tuple(i.to(device) for i in batch_data)
 				ids, masks, labels = batch_data
 				loss, results = self.model(ids, masks=masks, labels=labels, mode='v') # loss and logits
-
 				losses.append(loss.item())
 
 				# results = torch.argmax(logits, dim=2)
@@ -244,6 +243,8 @@ class Processor:
 
 				for mdx, result in enumerate(results):
 					lenth = torch.sum(masks[mdx]).item()
+					result.extend([0]*(512-len(result)))
+					# print(len(result))
 
 					channel_pred, channel_true = -1, -1
 					following, correct, total_pred, total_true = -1, 0, 0, 0
