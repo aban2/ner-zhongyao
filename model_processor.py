@@ -97,7 +97,7 @@ class Processor:
 			scheduler.step()
 
 			F0 = None
-			if (i+1+self.epoch_ct) % 20 == 0:
+			if (i+1+self.args['load_model']) % 20 == 0:
 				F0, _ = self.evaluate(self.args['train'])
 			F1, loss = self.evaluate(self.args['valid'])
 			F2, loss2 = self.evaluate(self.args['test'])
