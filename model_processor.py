@@ -114,7 +114,7 @@ class Processor:
 				torch.save(optimizer.state_dict(), 'models/Opt' + str(i+self.args['load_model']+1))
 			start_time = time()
 
-	def predict(self, filename, epoch):
+	def predict(self, filename):
 		# read
 		with open('chusai_xuanshou/'+filename+'.txt', 'r', encoding='utf-8') as f:
 			content = f.read()
