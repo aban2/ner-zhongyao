@@ -250,7 +250,7 @@ class Processor:
 
 					for jdx, (label_pred, label_true) in enumerate(zip(result, labels[mdx])):
 						#label_true, label_pred = label_true.item(), label_pred.item()
-						labels_true = labels_true.item()
+						label_true = label_true.item()
 
 						# process total true
 						if label_true != channel_true:
