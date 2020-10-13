@@ -50,22 +50,24 @@ class Processor:
  				 'lr':3e-2}
 		    ]
 		else:
-			param_optimizer = list(model.classifier.named_parameters())
+			param_optimizer = list(self.model.classifier.named_parameters())
 			optimizer_grouped_parameters = [{"params": [p for n, p in param_optimizer]}]
 
-		optimizer = AdamW(
+		self.optimizer = AdamW(
 			optimizer_grouped_parameters, lr=3e-5, eps=1e-8
 		)
 
 		if self.args['load_model'] > 0:
-			optimizer.load_state_dict(torch.load('models/Opt' + str(self.args['load_model'])))
+			self.optimizer.load_state_dict(torch.load('models/Opt' + str(self.args['load_model'])))
 			print('load optimizer success')
 		
 		total_steps = 1000#len(train_dataloader) * num_epoches
 		if self.args['load_model'] <= 0:
 			last_epoch = -1
+		else:
+			last_epoch = self.args['load_model']
 		scheduler = get_linear_schedule_with_warmup(
-		    optimizer,
+		    self.optimizer,
 		    num_warmup_steps=0,
 		    num_training_steps=total_steps,
 		    last_epoch=last_epoch
