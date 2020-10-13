@@ -5,11 +5,12 @@ import torch
 import numpy as np
 from utils import *
 from time import time
-from data_loader import get_train_dict
 from bertcrf import BERTCRF
+from torch.optim import AdamW
+from data_loader import get_train_dict
 from data_processer import padding, split_data
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
-from transformers import BertTokenizer, BertConfig, AdamW, get_linear_schedule_with_warmup
+from transformers import BertTokenizer, BertConfig, get_linear_schedule_with_warmup#, AdamW
 
 class Processor:
 	def __init__(self, args):
@@ -38,20 +39,22 @@ class Processor:
 		FULL_FINETUNING = True
 		if FULL_FINETUNING:
 		    param_optimizer = list(self.model.named_parameters())
+		    other_parameters = [(n, p) for n, p in param_optimizer if 'crf' not in n]
 		    no_decay = ['bias', 'gamma', 'beta']
 		    optimizer_grouped_parameters = [
-		        {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
+		        {'params': [p for n, p in other_parameters if not any(nd in n for nd in no_decay)],
 		         'weight_decay_rate': 0.01},
-		        {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
-		         'weight_decay_rate': 0.0}
+		        {'params': [p for n, p in other_parameters if any(nd in n for nd in no_decay)],
+ 				'weight_decay_rate': 0.0},
+ 				{'params':[p for n, p in param_optimizer if 'crf' in n],
+ 				 'lr':3e-2}
 		    ]
 		else:
-		    param_optimizer = list(model.classifier.named_parameters())
-		    optimizer_grouped_parameters = [{"params": [p for n, p in param_optimizer]}]
+			param_optimizer = list(model.classifier.named_parameters())
+			optimizer_grouped_parameters = [{"params": [p for n, p in param_optimizer]}]
+
 		self.optimizer = AdamW(
-		    optimizer_grouped_parameters,
-		    lr=3e-5,
-		    eps=1e-8
+			optimizer_grouped_parameters, lr=3e-5, eps=1e-8
 		)
 
 		if self.args['load_model'] > 0:
@@ -67,7 +70,6 @@ class Processor:
 		    num_training_steps=total_steps,
 		    last_epoch=last_epoch
 		)
-		print('eval')
 
 		# training
 		top = 1.3
@@ -82,7 +84,6 @@ class Processor:
 
 				self.model.zero_grad()
 				loss = self.model(ids, masks=masks, labels=labels)
-				sys.exit()
 
 				# process loss
 				loss.backward()
@@ -148,9 +149,9 @@ class Processor:
 		with torch.no_grad():
 			for kdx, data in enumerate(data_list):
 				t = self.tokenizer(data, is_split_into_words=True, return_tensors='pt')
-				logits = self.model(t['input_ids'], t['attention_mask'], t['token_type_ids'])
-				result = torch.argmax(logits, dim=2)
-				result = torch.squeeze(result, 0)
+				result = self.model(t['input_ids'], t['attention_mask'], t['token_type_ids'])
+				# result = torch.argmax(logits, dim=2)
+				# result = torch.squeeze(result, 0)
 				# extract entities
 				record = -1
 				record_pos = -1
@@ -233,12 +234,12 @@ class Processor:
 				# print(idx)
 				batch_data = tuple(i.to(device) for i in batch_data)
 				ids, masks, labels = batch_data
-				loss, logits = self.model(ids, masks=masks, labels=labels) # loss and logits
+				loss, results = self.model(ids, masks=masks, labels=labels, mode='v') # loss and logits
 
 				losses.append(loss.item())
 
-				results = torch.argmax(logits, dim=2)
-				results = results*masks
+				# results = torch.argmax(logits, dim=2)
+				# results = results*masks
 				# print(results.shape)
 
 				for mdx, result in enumerate(results):
