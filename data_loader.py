@@ -1,16 +1,16 @@
 # -*- coding:utf-8 -*-
 import os
+import sys
 import pandas as pd
 import numpy as np
 import pickle
 
 def get_train_data():
+
+	ddd = {}
 	id2input = {}
 	path = 'train_data'
 	fileList = os.listdir(path)
-
-	# dds = 0 
-	# cs = 0
 
 	for idx, file in enumerate(fileList):
 		name, suffix = os.path.splitext(file)
@@ -38,6 +38,11 @@ def get_train_data():
 					entity.extend(mid)
 					entity.append(s1[2])
 					entities.append(entity)
+					# sys.exit()
+					if mid[0] in ddd:
+						ddd[mid[0]] += 1
+					else:
+						ddd[mid[0]] = 1
 
 					# dds += len(s1[2])
  
@@ -55,12 +60,35 @@ def get_train_data():
 
 	# print(dds)
 	# print(cs)
+	for i in ddd:
+		print(i, ddd[i])
 	return id2input
 
 def load_pickle():
 	with open('data', 'rb') as f:
 		content = pickle.load(f)
 	return content
+
+def get_train_dict():
+	path = 'train_data'
+	fileList = os.listdir(path)
+	d = {}
+
+	for idx, file in enumerate(fileList):
+		name, suffix = os.path.splitext(file)
+		name = int(name)
+		with open(path+'/'+file, encoding='utf-8') as f:
+			lines = f.read().splitlines()
+
+			if suffix == '.ann':
+				for line in lines:
+					entity = []
+					s1 = line.split('\t')
+					mid = s1[1].split(' ')
+					if s1[2] not in d:
+						d[s1[2]] = mid[0]
+
+	return d
 
 if __name__ == '__main__':
 	get_train_data()

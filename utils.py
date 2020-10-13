@@ -1,5 +1,14 @@
 import pickle
 
+# get device
+if torch.cuda.is_available():
+	device = torch.device('cuda')
+	name = torch.cuda.get_device_name(0)
+else:
+	device = torch.device('cpu')
+	name = 'Cpu'
+print('Running On', name)
+
 def get_label_dic(train_labels):
 	id2label = {0:'[PAD]', 1:'O'}
 	label2id = {'[PAD]':0, 'O':1}
@@ -30,6 +39,8 @@ def load_label_dic():
 	with open('label_id_dic', 'rb') as f:
 		content = pickle.load(f)
 	return content
+
+label2id, id2label = load_label_dic()
 
 if __name__ == '__main__':
 	a, content = load_label_dic()

@@ -1,44 +1,30 @@
 # -*- coding:utf-8 -*-
+import re
 import sys
 import torch
 import numpy as np
+from utils import *
 from time import time
+from data_loader import get_train_dict
 from data_processer import padding, split_data
-from utils import get_label_dic, load_label_dic
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 from transformers import BertTokenizer, BertConfig, BertForTokenClassification, AdamW, get_linear_schedule_with_warmup
 
 class Processor:
-	def __init__(self, load=-1, train=None):
+	def __init__(self, args):#load=-1, train=None):
 		self.tokenizer = BertTokenizer.from_pretrained('bert-base-chinese')
-		self.load = load
-		if train != None:
-			self.label2id, self.id2label = get_label_dic(train[:,1])
-		else:
-			self.label2id, self.id2label = load_label_dic()
-		if torch.cuda.is_available():
-			self.device = torch.device('cuda')
-			name = torch.cuda.get_device_name(0)
-		else:
-			self.device = torch.device('cpu')
-			name = 'Cpu'
-		print('Running On', name)
-		# print(self.id2label)
-		if load < 0:
-			self.model = BertForTokenClassification.from_pretrained("bert-base-chinese", num_labels=len(self.label2id)).to(self.device)
+		self.args = args
+		
+		if args['load_model'] <= 0:
+			self.model = BertForTokenClassification.from_pretrained("bert-base-chinese", num_labels=len(label2id)).to(device)
 
 		else:
 			self.model = torch.load('models/Mod' + str(load))
 			print('load success')
 
-		if load < 0:
-			self.epoch_ct = load+1
-		else:
-			self.epoch_ct = load
-
 
 	def data2loader(self, data, mode, batch_size):
-		padded_data, padded_labels, followed = padding(data, self.tokenizer, self.label2id)
+		padded_data, padded_labels, followed = padding(data, self.tokenizer, label2id)
 		data = TensorDataset(padded_data['input_ids'], padded_data['attention_mask'], padded_labels)
 		if mode == 'train':
 			sampler = RandomSampler(data)
@@ -50,9 +36,10 @@ class Processor:
 		return dataloader, followed
 		
 
-	def train(self, train, valid, test, num_epoches, batch_size, save_epoch, max_grad_norm=1.0):
+	def train(self):
+		# args: train, valid, test, 
 		# get dataloader
-		train_dataloader, _ = self.data2loader(train, mode='train', batch_size=batch_size)
+		train_dataloader, _ = self.data2loader(self.args['train'], mode='train', batch_size=self.args['batch_size'])
 		# optimizer and scheduler
 		FULL_FINETUNING = True
 		if FULL_FINETUNING:
@@ -73,7 +60,7 @@ class Processor:
 		    eps=1e-8
 		)
 
-		if self.load > 0:
+		if self.args['load_model'] > 0:
 			self.optimizer.load_state_dict(torch.load('models/Opt' + str(self.load)))
 			print('load optimizer success')
 		
@@ -94,7 +81,7 @@ class Processor:
 			losses = 0
 			for idx, batch_data in enumerate(train_dataloader):
 				#print(idx)
-				batch_data = tuple(i.to(self.device) for i in batch_data)
+				batch_data = tuple(i.to(device) for i in batch_data)
 				ids, masks, labels = batch_data
 
 				self.model.zero_grad()
@@ -151,7 +138,7 @@ class Processor:
 			# print(len(followed), np.sum(followed))
 			for idx, batch_data in enumerate(dataloader):
 				# print(idx)
-				batch_data = tuple(i.to(self.device) for i in batch_data)
+				batch_data = tuple(i.to(device) for i in batch_data)
 				ids, masks, labels = batch_data
 				loss, logits = model(ids, attention_mask=masks, labels=labels) # loss and logits
 
@@ -243,19 +230,21 @@ class Processor:
 		with open('chusai_xuanshou/'+filename+'.txt', 'r', encoding='utf-8') as f:
 			content = f.read()
 		model = torch.load('models/Mod' + epoch)
+		#exist_word = 
 
 		# predict
 		space = ','
-		content = content.replace(' ', space).replace('　', space)
-		content = list(content)
-		if len(content) > 510:
-			data_list = split_data(content)
+		content2 = content.replace(' ', space).replace('　', space)
+		content2 = list(content)
+		if len(content2) > 510:
+			data_list = split_data(content2)
 		else:
-			data_list = [content]
+			data_list = [content2]
 
 		# print(data_list)
 
 		ret_str = ''
+		ret_dic = {}
 		ct = 1
 		model.eval()
 		para_offset = 0
@@ -269,12 +258,13 @@ class Processor:
 			else:
 				offsets.append(space_ct)
 
-		stop_words = ['.', ',', '(', ')', '。', '，','、', '（','）', ':', '：']
+
+		stop_words = ['.', ',', '(', ')', '。', '，','、', '（','）', ':', '：', ' ', '　']
 		crfs = 0
 		with torch.no_grad():
 			for kdx, data in enumerate(data_list):
 				t = self.tokenizer(data, is_split_into_words=True, return_tensors='pt')
-				_, logits = model(t['input_ids'].to(self.device), attention_mask=t['attention_mask'].to(self.device), labels=t['token_type_ids'].to(self.device))
+				_, logits = model(t['input_ids'].to(device), attention_mask=t['attention_mask'].to(device), labels=t['token_type_ids'].to(device))
 				result = torch.argmax(logits, dim=2)
 				result = torch.squeeze(result, 0)
 				# extract entities
@@ -318,7 +308,8 @@ class Processor:
 
 						# if truncation > 0:
 							# print('hi')
-						ret_str += extra + 'T' + str(ct) + '\t' + self.id2label[record.item()][2:] + ' ' + str(new_start) + ' ' + str(new_end) + '\t' + real_entity
+						ret_str += extra + 'T' + str(ct) + '\t' + id2label[record.item()][2:] + ' ' + str(new_start) + ' ' + str(new_end) + '\t' + real_entity
+						ret_dic[(real_entity, new_start, new_end)] = id2label[record.item()][2:]
 						if truncation < 0 and entity != real_entity and ' ' not in real_entity and '　' not in real_entity and '[ U N K ]' not in entity:
 							print('wrong', filename)
 							print(entity)
@@ -337,14 +328,51 @@ class Processor:
 							entity = ''
 				para_offset += result.shape[0]-2
 
-		# print(ret_str)
 		return ret_str
 
-		# write ann
+# 		tups = []
+
+# 		covered = np.zeros(len(content))
+# #		print(content)
+# 		for word in self.dict:
+# 			if word in content:
+# 				entity_startindex = [i.start() for i in re.finditer(word, content)]
+# 				for start in entity_startindex:
+# 					tups.append((word, start, start+len(word)))
+# 						# covered[start:start+len(word)] = 1
+
+# 		tups = sorted(tups, key=lambda x:len(x[0]), reverse=True)
+
+# 		new_tup = []
+# 		for tup in tups:
+# 			word, start, end = tup
+# 			if covered[start:end].any() == 0:
+# 				new_tup.append(tup)
+# 				covered[start:end] = 1
+
+# 		# print(tups)
+# 		# print('ct=', ct)
+# 		if ret_str == '':
+# 			extra = ''
+# 		else:
+# 			extra = '\n'
+
+# 		ok_list = ['DRUG_EFFICACY', 'SYMPTOM']
+
+# 		for tup in new_tup:
+# 			if tup in ret_dic:
+# 				continue
+# 			word, start, end = tup
+# 			# if self.dict[word] not in ok_list:
+# 			# 	continue
+# 			ret_str += extra + 'T' + str(ct) + '\t' + self.dict[word] + ' ' + str(start) + ' ' + str(end) + '\t' + word
+# 			extra = '\n'
+# 			ct += 1
+						
+# 		return ret_str
 
 if __name__ == '__main__':
-	filename = '1000'
-	with open('chusai_xuanshou/'+filename+'.txt', 'r', encoding='utf-8') as f:
-		content = f.read()
-
-	print(content)
+	a = 'wocai, nicai, wobucai, hahawoshinidie'
+	b = 'wo'
+	entity_startindex = [i.start() for i in re.finditer(b, a)]
+	print(entity_startindex)

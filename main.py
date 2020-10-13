@@ -2,39 +2,34 @@ from data_loader import get_train_data, load_pickle
 from data_processer import divide_dataset
 from model_processor import Processor
 import bertcrf
+import sys
 
+train, valid, test = divide_dataset(load_pickle())
+args = {
+	'is_train': 1,
+	'load_model':0,
+	'batch_size': 1,
+	'num_epoches': 1,
+	'save_epoch': 100,
+	'max_grad_norm': 1.0
+	'train':train,
+	'valid':valid,
+	'test':test
+}
 
-train, valid, test = divide_dataset(get_train_data())
+sys.exit()
+processor = Processor(args)
 
-processor = Processor()#load=200)#train=train)
-print(processor)
-
-# args = {
-# 	is_train=1,
-# 	batch_size=16,
-# 	save_epoch=100,
-# 	max_norm=max_grad_norm=1.0
-# }
-
-is_train = 0
-
-if is_train:
-	processor.train(train=train, valid=valid, test=test, num_epoches=1, batch_size=1, save_epoch=100)
+if args['is_train'] > 0:
+	processor.train()
 else:
-	# print(processor.evaluate(test, '325'))
-	ct = 1
 	for i in range(1000, 1500):
 		print(i)
-		name = str(i)
-		t = processor.predict(filename=name, epoch='600')
+		filename = str(i)
+		t = processor.predict(filename)
 
 		with open('train/'+name+'.ann', 'w', encoding='utf-8') as f:
 			f.write(t)
-
-		# print(t)
-
-		ct += 1
-
 		# break
 
 		if t == None:
