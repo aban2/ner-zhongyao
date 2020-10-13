@@ -37,13 +37,13 @@ class Processor:
 		train_dataloader, _ = self.data2loader(self.args['train'], mode='train', batch_size=self.args['batch_size'])
 		# optimizer and scheduler
 
-	    param_optimizer = list(self.model.named_parameters())
-	    other_parameters = [(n, p) for n, p in param_optimizer if 'crf' not in n]
-	    no_decay = ['bias', 'gamma', 'beta']
-	    optimizer_grouped_parameters = [
-	        {'params': [p for n, p in other_parameters if not any(nd in n for nd in no_decay)],
-	         'weight_decay_rate': 0.01},
-	        {'params': [p for n, p in other_parameters if any(nd in n for nd in no_decay)],
+		param_optimizer = list(self.model.named_parameters())
+		other_parameters = [(n, p) for n, p in param_optimizer if 'crf' not in n]
+		no_decay = ['bias', 'gamma', 'beta']
+		optimizer_grouped_parameters = [
+			{'params': [p for n, p in other_parameters if not any(nd in n for nd in no_decay)],
+				'weight_decay_rate': 0.01},
+			{'params': [p for n, p in other_parameters if any(nd in n for nd in no_decay)],
 				'weight_decay_rate': 0.0},
 			{'params':[p for n, p in param_optimizer if 'crf' in n], 'lr':3e-2}
 		]
