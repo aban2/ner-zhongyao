@@ -28,4 +28,4 @@ class BERTCRF(nn.Module):
 			out = []
 			for tup in tups:
 				out.append(tup[0])
-			return loss, tups
+			return loss, out

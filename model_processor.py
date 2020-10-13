@@ -75,26 +75,26 @@ class Processor:
 		top = 1.3
 		start_time = time()
 		for i in range(self.args['num_epoches']):
-			self.model.train()
+			# self.model.train()
 
-			losses = 0
-			for idx, batch_data in enumerate(train_dataloader):
-				batch_data = tuple(i.to(device) for i in batch_data)
-				ids, masks, labels = batch_data
+			# losses = 0
+			# for idx, batch_data in enumerate(train_dataloader):
+			# 	batch_data = tuple(i.to(device) for i in batch_data)
+			# 	ids, masks, labels = batch_data
 
-				self.model.zero_grad()
-				loss = self.model(ids, masks=masks, labels=labels)
+			# 	self.model.zero_grad()
+			# 	loss = self.model(ids, masks=masks, labels=labels)
 
-				# process loss
-				loss.backward()
-				losses += loss.item()
+			# 	# process loss
+			# 	loss.backward()
+			# 	losses += loss.item()
 
-				# tackle exploding gradients
-				torch.nn.utils.clip_grad_norm_(parameters=self.model.parameters(), max_norm=self.args['max_grad_norm'])
+			# 	# tackle exploding gradients
+			# 	torch.nn.utils.clip_grad_norm_(parameters=self.model.parameters(), max_norm=self.args['max_grad_norm'])
 
-				self.optimizer.step()
+			# 	self.optimizer.step()
 
-			scheduler.step()
+			# scheduler.step()
 
 			F0 = None
 			if (i+1+self.args['load_model']) % 20 == 0:
