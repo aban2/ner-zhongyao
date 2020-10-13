@@ -1,4 +1,5 @@
 import pickle
+import torch
 
 # get device
 if torch.cuda.is_available():
@@ -27,7 +28,6 @@ def get_label_dic(train_labels):
 				label2id['B_'+label] = ct
 				id2label[ct] = 'B_'+label
 				ct += 1
-
 
 	with open('label_id_dic', 'wb') as f:
 		print('save_label_id_dic')

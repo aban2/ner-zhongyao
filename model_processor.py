@@ -6,25 +6,20 @@ import numpy as np
 from utils import *
 from time import time
 from data_loader import get_train_dict
+from bertcrf import BERTCRF
 from data_processer import padding, split_data
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
-from transformers import BertTokenizer, BertConfig, BertForTokenClassification, AdamW, get_linear_schedule_with_warmup
+from transformers import BertTokenizer, BertConfig, AdamW, get_linear_schedule_with_warmup
 
 class Processor:
-	def __init__(self, args):#load=-1, train=None):
+	def __init__(self, args):
 		self.tokenizer = BertTokenizer.from_pretrained('bert-base-chinese')
 		self.args = args
-		
-		if args['load_model'] <= 0:
-			self.model = BertForTokenClassification.from_pretrained("bert-base-chinese", num_labels=len(label2id)).to(device)
-
-		else:
-			self.model = torch.load('models/Mod' + str(load))
-			print('load success')
-
+		self.model = BERTCRF(args).to(device)
 
 	def data2loader(self, data, mode, batch_size):
 		padded_data, padded_labels, followed = padding(data, self.tokenizer, label2id)
+
 		data = TensorDataset(padded_data['input_ids'], padded_data['attention_mask'], padded_labels)
 		if mode == 'train':
 			sampler = RandomSampler(data)
@@ -37,7 +32,6 @@ class Processor:
 		
 
 	def train(self):
-		# args: train, valid, test, 
 		# get dataloader
 		train_dataloader, _ = self.data2loader(self.args['train'], mode='train', batch_size=self.args['batch_size'])
 		# optimizer and scheduler
@@ -61,38 +55,41 @@ class Processor:
 		)
 
 		if self.args['load_model'] > 0:
-			self.optimizer.load_state_dict(torch.load('models/Opt' + str(self.load)))
+			self.optimizer.load_state_dict(torch.load('models/Opt' + str(self.args['load_model'])))
 			print('load optimizer success')
 		
 		total_steps = 5000#len(train_dataloader) * num_epoches
+		if self.args['load_model'] <= 0:
+			last_epoch = -1
 		scheduler = get_linear_schedule_with_warmup(
 		    self.optimizer,
-		    num_warmup_steps=0,	
+		    num_warmup_steps=0,
 		    num_training_steps=total_steps,
-		    last_epoch=self.load
+		    last_epoch=last_epoch
 		)
+		print('eval')
 
 		# training
 		top = 1.3
 		start_time = time()
-		for i in range(num_epoches):
+		for i in range(self.args['num_epoches']):
 			self.model.train()
 
 			losses = 0
 			for idx, batch_data in enumerate(train_dataloader):
-				#print(idx)
 				batch_data = tuple(i.to(device) for i in batch_data)
 				ids, masks, labels = batch_data
 
 				self.model.zero_grad()
-				loss, _ = self.model(ids, attention_mask=masks, labels=labels)
+				loss = self.model(ids, masks=masks, labels=labels)
+				sys.exit()
 
 				# process loss
 				loss.backward()
 				losses += loss.item()
 
 				# tackle exploding gradients
-				torch.nn.utils.clip_grad_norm_(parameters=self.model.parameters(), max_norm=max_grad_norm)
+				torch.nn.utils.clip_grad_norm_(parameters=self.model.parameters(), max_norm=self.args['max_grad_norm'])
 
 				self.optimizer.step()
 
@@ -100,33 +97,129 @@ class Processor:
 
 			F0 = None
 			if (i+1+self.epoch_ct) % 20 == 0:
-				F0, _ = self.evaluate(train)
-			F1, loss = self.evaluate(valid)
-			F2, loss2 = self.evaluate(test)
+				F0, _ = self.evaluate(self.args['train'])
+			F1, loss = self.evaluate(self.args['valid'])
+			F2, loss2 = self.evaluate(self.args['test'])
 
 			if F1+F2 > top:
 				top = F1 + F2
-				torch.save(self.model, 'models/Mod' + str(i+self.epoch_ct+1))
+				torch.save(self.model, 'models/Mod' + str(i+self.args['load_model']+1))
 				print('save new top', top)
 
-			print('Epoch', i+self.epoch_ct+1, losses/len(train_dataloader), loss, 'F1', F1, F2, F0, time()-start_time)
+			print('Epoch', i+self.args['load_model']+1, losses/len(train_dataloader), loss, 'F1', F1, F2, F0, time()-start_time)
 
-			if (i+1+self.epoch_ct) % save_epoch == 0:
-				torch.save(self.model, 'models/Mod' + str(i+self.epoch_ct+1))
-				torch.save(self.optimizer.state_dict(), 'models/Opt' + str(i+self.epoch_ct+1))
+			if (i+1+self.args['load_model']) % self.args['save_epoch'] == 0:
+				torch.save(self.model, 'models/Mod' + str(i+self.args['load_model']+1))
+				torch.save(self.optimizer.state_dict(), 'models/Opt' + str(i+self.args['load_model']+1))
 			start_time = time()
 
-	def evaluate(self, valid, epoch=None):
+	def predict(self, filename, epoch):
+		# read
+		with open('chusai_xuanshou/'+filename+'.txt', 'r', encoding='utf-8') as f:
+			content = f.read()
+
+		# predict
+		space = ','
+		content2 = content.replace(' ', space).replace('　', space)
+		content2 = list(content)
+		if len(content2) > 510:
+			data_list = split_data(content2)
+		else:
+			data_list = [content2]
+
+		ret_str = ''
+		ret_dic = {}
+		ct = 1
+		self.model.eval()
+		para_offset = 0
+		offsets = []
+		space_ct = -1
+
+		# calculate offset
+		for c in content:
+			if c == ' ' or c == '　':
+				space_ct += 1
+			else:
+				offsets.append(space_ct)
+
+
+		stop_words = ['.', ',', '(', ')', '。', '，','、', '（','）', ':', '：', ' ', '　']
+		crfs = 0
+		with torch.no_grad():
+			for kdx, data in enumerate(data_list):
+				t = self.tokenizer(data, is_split_into_words=True, return_tensors='pt')
+				logits = self.model(t['input_ids'], t['attention_mask'], t['token_type_ids'])
+				result = torch.argmax(logits, dim=2)
+				result = torch.squeeze(result, 0)
+				# extract entities
+				record = -1
+				record_pos = -1
+				entity = ""
+
+				for idx, c in enumerate(result):
+					word = self.tokenizer.decode(t['input_ids'][0][idx].item())
+					if record < 0 and c > 1 and c & 1:
+						entity += word
+						record = c-1
+						record_pos = idx
+					elif c == record:
+						entity += word
+					elif record > 1 and c != record:
+						# check crf:
+						# if c > 1 and (c & 1 == 0):
+						# 	print(result)
+						# 	crfs = 1
+						# 	print('wrong crf')
+						# 	return
+
+						extra = '\n'
+						if ret_str == '':
+							extra = ''
+						offset = offsets[record_pos+para_offset] + para_offset
+						new_start, new_end = record_pos+offset, idx+offset
+						real_entity = ''.join(content[new_start:new_end])
+
+						# truncate
+						truc_entity = ""
+						truncation = -1
+						for qdx, q in enumerate(real_entity):
+							if q in stop_words:
+								truncation = qdx
+								break
+						if truncation > 0:
+							new_end = new_start+truncation
+							real_entity = real_entity[0:truncation]
+
+						# if truncation > 0:
+							# print('hi')
+						ret_str += extra + 'T' + str(ct) + '\t' + id2label[record.item()][2:] + ' ' + str(new_start) + ' ' + str(new_end) + '\t' + real_entity
+						ret_dic[(real_entity, new_start, new_end)] = id2label[record.item()][2:]
+						if truncation < 0 and entity != real_entity and ' ' not in real_entity and '　' not in real_entity and '[ U N K ]' not in entity:
+							print('wrong', filename)
+							print(entity)
+							print(real_entity)
+							return
+						# print(new_start, new_end, offset, ''.join(content[new_start:new_end]))
+						# reset
+						ct += 1
+						if c > 1 and c & 1:
+							record_pos = idx
+							record = c-1
+							entity = word
+						else:
+							record_pos = -1
+							record = -1
+							entity = ''
+				para_offset += result.shape[0]-2
+
+		return ret_str
+
+	def evaluate(self, valid):
 		# get dataloader
 		batch_size = 64
-		dataloader, followed = self.data2loader(valid, 'valid', batch_size=batch_size)
+		dataloader, followed = self.data2loader(self.args['valid'], 'valid', batch_size=self.args['batch_size'])
 
-		if epoch != None:
-			model = torch.load('models/Mod' + epoch)
-		else:
-			model = self.model
-
-		model.eval()
+		self.model.eval()
 		with torch.no_grad():
 			losses = 0
 			recalls, accs = [], []
@@ -140,7 +233,7 @@ class Processor:
 				# print(idx)
 				batch_data = tuple(i.to(device) for i in batch_data)
 				ids, masks, labels = batch_data
-				loss, logits = model(ids, attention_mask=masks, labels=labels) # loss and logits
+				loss, logits = self.model(ids, masks=masks, labels=labels) # loss and logits
 
 				losses.append(loss.item())
 
@@ -220,115 +313,8 @@ class Processor:
 						else:
 							last_F1 = 2*(precision*recall) / (precision+recall)
 
-					# 	break
-					# break
-
 			F1s.append(last_F1)
 			return np.mean(F1s), np.mean(losses)
-	def predict(self, filename, epoch):
-		# read
-		with open('chusai_xuanshou/'+filename+'.txt', 'r', encoding='utf-8') as f:
-			content = f.read()
-		model = torch.load('models/Mod' + epoch)
-		#exist_word = 
-
-		# predict
-		space = ','
-		content2 = content.replace(' ', space).replace('　', space)
-		content2 = list(content)
-		if len(content2) > 510:
-			data_list = split_data(content2)
-		else:
-			data_list = [content2]
-
-		# print(data_list)
-
-		ret_str = ''
-		ret_dic = {}
-		ct = 1
-		model.eval()
-		para_offset = 0
-		offsets = []
-		space_ct = -1
-
-		# calculate offset
-		for c in content:
-			if c == ' ' or c == '　':
-				space_ct += 1
-			else:
-				offsets.append(space_ct)
-
-
-		stop_words = ['.', ',', '(', ')', '。', '，','、', '（','）', ':', '：', ' ', '　']
-		crfs = 0
-		with torch.no_grad():
-			for kdx, data in enumerate(data_list):
-				t = self.tokenizer(data, is_split_into_words=True, return_tensors='pt')
-				_, logits = model(t['input_ids'].to(device), attention_mask=t['attention_mask'].to(device), labels=t['token_type_ids'].to(device))
-				result = torch.argmax(logits, dim=2)
-				result = torch.squeeze(result, 0)
-				# extract entities
-				record = -1
-				record_pos = -1
-				entity = ""
-
-				for idx, c in enumerate(result):
-					word = self.tokenizer.decode(t['input_ids'][0][idx].item())
-					if record < 0 and c > 1 and c & 1:
-						entity += word
-						record = c-1
-						record_pos = idx
-					elif c == record:
-						entity += word
-					elif record > 1 and c != record:
-						# check crf:
-						# if c > 1 and (c & 1 == 0):
-						# 	print(result)
-						# 	crfs = 1
-						# 	print('wrong crf')
-						# 	return
-
-						extra = '\n'
-						if ret_str == '':
-							extra = ''
-						offset = offsets[record_pos+para_offset] + para_offset
-						new_start, new_end = record_pos+offset, idx+offset
-						real_entity = ''.join(content[new_start:new_end])
-
-						# truncate
-						truc_entity = ""
-						truncation = -1
-						for qdx, q in enumerate(real_entity):
-							if q in stop_words:
-								truncation = qdx
-								break
-						if truncation > 0:
-							new_end = new_start+truncation
-							real_entity = real_entity[0:truncation]
-
-						# if truncation > 0:
-							# print('hi')
-						ret_str += extra + 'T' + str(ct) + '\t' + id2label[record.item()][2:] + ' ' + str(new_start) + ' ' + str(new_end) + '\t' + real_entity
-						ret_dic[(real_entity, new_start, new_end)] = id2label[record.item()][2:]
-						if truncation < 0 and entity != real_entity and ' ' not in real_entity and '　' not in real_entity and '[ U N K ]' not in entity:
-							print('wrong', filename)
-							print(entity)
-							print(real_entity)
-							return
-						# print(new_start, new_end, offset, ''.join(content[new_start:new_end]))
-						# reset
-						ct += 1
-						if c > 1 and c & 1:
-							record_pos = idx
-							record = c-1
-							entity = word
-						else:
-							record_pos = -1
-							record = -1
-							entity = ''
-				para_offset += result.shape[0]-2
-
-		return ret_str
 
 # 		tups = []
 
