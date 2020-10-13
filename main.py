@@ -27,9 +27,11 @@ else:
 		filename = str(i)
 		t = processor.predict(filename)
 
-		with open('train/'+name+'.ann', 'w', encoding='utf-8') as f:
-			f.write(t)
+		# with open('train/'+name+'.ann', 'w', encoding='utf-8') as f:
+		# 	f.write(t)
 		# break
+
+		print(t)
 
 		if t == None:
 			print('oh')

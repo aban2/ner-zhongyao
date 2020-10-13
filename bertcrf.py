@@ -13,7 +13,7 @@ class BERTCRF(nn.Module):
 			self.model = BertForTokenClassification.from_pretrained("bert-base-chinese", num_labels=len(label2id))
 
 		else:
-			self.model = torch.load('models/Mod' + str(load))
+			self.model = torch.load('models/Mod' + str(args['load_model']))
 			print('load success')
 
 		self.crf = ConditionalRandomField(len(label2id))

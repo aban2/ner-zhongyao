@@ -53,19 +53,19 @@ class Processor:
 			param_optimizer = list(model.classifier.named_parameters())
 			optimizer_grouped_parameters = [{"params": [p for n, p in param_optimizer]}]
 
-		self.optimizer = AdamW(
+		optimizer = AdamW(
 			optimizer_grouped_parameters, lr=3e-5, eps=1e-8
 		)
 
 		if self.args['load_model'] > 0:
-			self.optimizer.load_state_dict(torch.load('models/Opt' + str(self.args['load_model'])))
+			optimizer.load_state_dict(torch.load('models/Opt' + str(self.args['load_model'])))
 			print('load optimizer success')
 		
 		total_steps = 1000#len(train_dataloader) * num_epoches
 		if self.args['load_model'] <= 0:
 			last_epoch = -1
 		scheduler = get_linear_schedule_with_warmup(
-		    self.optimizer,
+		    optimizer,
 		    num_warmup_steps=0,
 		    num_training_steps=total_steps,
 		    last_epoch=last_epoch
@@ -92,7 +92,7 @@ class Processor:
 				# tackle exploding gradients
 				torch.nn.utils.clip_grad_norm_(parameters=self.model.parameters(), max_norm=self.args['max_grad_norm'])
 
-				self.optimizer.step()
+				optimizer.step()
 
 			scheduler.step()
 
@@ -111,7 +111,7 @@ class Processor:
 
 			if (i+1+self.args['load_model']) % self.args['save_epoch'] == 0:
 				torch.save(self.model, 'models/Mod' + str(i+self.args['load_model']+1))
-				torch.save(self.optimizer.state_dict(), 'models/Opt' + str(i+self.args['load_model']+1))
+				torch.save(optimizer.state_dict(), 'models/Opt' + str(i+self.args['load_model']+1))
 			start_time = time()
 
 	def predict(self, filename, epoch):
