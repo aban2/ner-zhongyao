@@ -61,7 +61,7 @@ class Processor:
 			self.optimizer.load_state_dict(torch.load('models/Opt' + str(self.args['load_model'])))
 			print('load optimizer success')
 		
-		total_steps = 5000#len(train_dataloader) * num_epoches
+		total_steps = 1000#len(train_dataloader) * num_epoches
 		if self.args['load_model'] <= 0:
 			last_epoch = -1
 		scheduler = get_linear_schedule_with_warmup(
