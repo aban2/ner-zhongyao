@@ -45,7 +45,8 @@ class Processor:
 	         'weight_decay_rate': 0.01},
 	        {'params': [p for n, p in other_parameters if any(nd in n for nd in no_decay)],
 				'weight_decay_rate': 0.0},
-			{'params':[p for n, p in param_optimizer if 'crf' in n], 'lr':3e-2} ]
+			{'params':[p for n, p in param_optimizer if 'crf' in n], 'lr':3e-2}
+		]
 
 		optimizer = AdamW(
 			optimizer_grouped_parameters, lr=3e-5, eps=1e-8
