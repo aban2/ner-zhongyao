@@ -19,7 +19,7 @@ class Processor:
 		if args['load_model'] <= 0:
 			self.model = BERTCRF().to(device)
 		else:
-			self.model = torch.load('models/Mod' + str(args['load_model']))
+			self.model = torch.load('models/Mod' + str(args['load_model'])).to(device)
 			print('load success')
 
 	def data2loader(self, data, mode, batch_size):
@@ -117,7 +117,7 @@ class Processor:
 
 			if (i+1+self.args['load_model']) % self.args['save_epoch'] == 0:
 				torch.save(self.model, 'models/Mod' + str(i+self.args['load_model']+1))
-				torch.save(optimizer.state_dict(), 'models/Opt' + str(i+self.args['load_model']+1))
+				# torch.save(optimizer.state_dict(), 'models/Opt' + str(i+self.args['load_model']+1))
 			start_time = time()
 
 	def predict(self, filename):
@@ -155,13 +155,14 @@ class Processor:
 		with torch.no_grad():
 			for kdx, data in enumerate(data_list):
 				t = self.tokenizer(data, is_split_into_words=True, return_tensors='pt')
-				result = self.model(t['input_ids'], t['attention_mask'], t['token_type_ids'])
+				_, result = self.model(t['input_ids'].to(device), t['attention_mask'].to(device), t['token_type_ids'].to(device), mode='f')
 				# result = torch.argmax(logits, dim=2)
 				# result = torch.squeeze(result, 0)
 				# extract entities
 				record = -1
 				record_pos = -1
 				entity = ""
+				result = result[0]
 
 				for idx, c in enumerate(result):
 					word = self.tokenizer.decode(t['input_ids'][0][idx].item())
@@ -199,8 +200,8 @@ class Processor:
 
 						# if truncation > 0:
 							# print('hi')
-						ret_str += extra + 'T' + str(ct) + '\t' + id2label[record.item()][2:] + ' ' + str(new_start) + ' ' + str(new_end) + '\t' + real_entity
-						ret_dic[(real_entity, new_start, new_end)] = id2label[record.item()][2:]
+						ret_str += extra + 'T' + str(ct) + '\t' + id2label[record][2:] + ' ' + str(new_start) + ' ' + str(new_end) + '\t' + real_entity
+						ret_dic[(real_entity, new_start, new_end)] = id2label[record][2:]
 						if truncation < 0 and entity != real_entity and ' ' not in real_entity and '　' not in real_entity and '[ U N K ]' not in entity:
 							print('wrong', filename)
 							print(entity)
@@ -217,7 +218,7 @@ class Processor:
 							record_pos = -1
 							record = -1
 							entity = ''
-				para_offset += result.shape[0]-2
+				para_offset += len(result)-2
 
 		return ret_str
 

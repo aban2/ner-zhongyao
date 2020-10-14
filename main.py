@@ -6,11 +6,11 @@ import sys
 
 train, valid, test = divide_dataset(load_pickle())
 args = {
-	'load_model':0,
+	'load_model':50,
 	'num_epoches': 3,
 	'save_epoch': 2,
 
-	'is_train': 1,
+	'is_train': 0,
 	'batch_size': 1,
 	'max_grad_norm': 1.0,
 	'train':train,
@@ -30,10 +30,10 @@ else:
 
 		# with open('train/'+name+'.ann', 'w', encoding='utf-8') as f:
 		# 	f.write(t)
-		# break
 
 		print(t)
 
+		# break
 		if t == None:
 			print('oh')
 			break
