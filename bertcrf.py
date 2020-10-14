@@ -16,7 +16,7 @@ class BERTCRF(nn.Module):
 			self.model = torch.load('models/Mod' + str(args['load_model']))
 			print('load success')
 
-		self.crf = ConditionalRandomField(len(label2id))
+		self.crf = ConditionalRandomField(len(label2id), include_start_end_transitions=False)
 
 	def forward(self, ids, masks, labels, mode='train'):
 		loss, logits = self.model(ids, attention_mask=masks, labels=labels)
