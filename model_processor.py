@@ -61,9 +61,9 @@ class Processor:
 			optimizer_grouped_parameters, lr=3e-5, eps=1e-8
 		)
 
-		if self.args['load_model'] > 0:
-			optimizer.load_state_dict(torch.load('models/Opt' + str(self.args['load_model'])))
-			print('load optimizer success')
+		# if self.args['load_model'] > 0:
+		# 	optimizer.load_state_dict(torch.load('models/Opt' + str(self.args['load_model'])))
+		# 	print('load optimizer success')
 		
 		total_steps = 1000#len(train_dataloader) * num_epoches
 		if self.args['load_model'] <= 0:
