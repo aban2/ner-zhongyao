@@ -7,15 +7,10 @@ from transformers import BertForTokenClassification
 
 class BERTCRF(nn.Module):
 
-	def __init__(self, args):
+	def __init__(self):
 		super(BERTCRF, self).__init__()
-		if args['load_model'] <= 0:
-			self.model = BertForTokenClassification.from_pretrained("bert-base-chinese", num_labels=len(label2id))
 
-		else:
-			self.model = torch.load('models/Mod' + str(args['load_model']))
-			print('load success')
-
+		self.model = BertForTokenClassification.from_pretrained("bert-base-chinese", num_labels=len(label2id))
 		self.crf = ConditionalRandomField(len(label2id), include_start_end_transitions=False)
 
 	def forward(self, ids, masks, labels, mode='train'):

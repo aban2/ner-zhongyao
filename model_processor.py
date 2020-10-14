@@ -16,7 +16,11 @@ class Processor:
 	def __init__(self, args):
 		self.tokenizer = BertTokenizer.from_pretrained('bert-base-chinese')
 		self.args = args
-		self.model = BERTCRF(args).to(device)
+		if args['load_model'] <= 0:
+			self.model = BERTCRF().to(device)
+		else:
+			self.model = torch.load('models/Mod' + str(args['load_model']))
+			print('load success')
 
 	def data2loader(self, data, mode, batch_size):
 		padded_data, padded_labels, followed = padding(data, self.tokenizer, label2id)

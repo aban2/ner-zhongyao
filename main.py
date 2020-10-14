@@ -6,11 +6,12 @@ import sys
 
 train, valid, test = divide_dataset(load_pickle())
 args = {
-	'is_train': 1,
 	'load_model':0,
-	'batch_size': 1,
-	'num_epoches': 2,
-	'save_epoch': 100,
+	'num_epoches': 3,
+	'save_epoch': 2,
+
+	'is_train': 1,
+	'batch_size': 16,
 	'max_grad_norm': 1.0,
 	'train':train,
 	'valid':valid,
