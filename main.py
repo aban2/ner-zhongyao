@@ -2,6 +2,7 @@ from data_loader import get_train_data, load_pickle
 from data_processer import divide_dataset
 from model_processor import Processor
 import bertcrf
+import os
 import sys
 
 fold = 2
@@ -26,17 +27,30 @@ processor = Processor(args)
 if args['is_train'] > 0:
 	processor.train()
 else:
+	# get model list
+	models = []
+	fileList = os.listdir('models')
+	for idx, file in enumerate(fileList):
+		models.append(file)
+
 	for i in range(1000, 1500):
 		print(i)
 		filename = str(i)
-		t = processor.predict(filename)
 
-		with open('train/'+filename+'.ann', 'w', encoding='utf-8') as f:
-			f.write(t)
+		ret_dic = {}
+		for model in models:
+			_, ret_dic = processor.predict(filename, ret_dic, model)
+			# print('hi')
+
+		# with open('train/'+filename+'.ann', 'w', encoding='utf-8') as f:
+		# 	f.write(t)
 
 		# print(t)
+		# for key in ret_dic:
+		# 	print(key ,ret_dic[key])
+		# print()
 
 		# break
-		if t == None:
+		if ret_dic == None:
 			print('oh')
 			break

@@ -120,14 +120,15 @@ class Processor:
 				# torch.save(optimizer.state_dict(), 'models/Opt' + str(i+self.args['load_model']+1))
 			start_time = time()
 
-	def predict(self, filename):
+
+	def predict(self, filename, ret_dic, model_name=None):
+
+		if model_name:
+			self.model = torch.load('models/'+model_name)
+
 		# read
 		with open('chusai_xuanshou/'+filename+'.txt', 'r', encoding='utf-8') as f:
 			content = f.read()
-
-		# a = self.model.crf.transitions
-		# print(a)
-		# sys.exit()
 
 		# predict
 		space = ','
@@ -139,7 +140,6 @@ class Processor:
 			data_list = [content2]
 
 		ret_str = ''
-		ret_dic = {}
 		ct = 1
 		self.model.eval()
 		para_offset = 0
@@ -205,7 +205,11 @@ class Processor:
 						# if truncation > 0:
 							# print('hi')
 						ret_str += extra + 'T' + str(ct) + '\t' + id2label[record][2:] + ' ' + str(new_start) + ' ' + str(new_end) + '\t' + real_entity
-						ret_dic[(real_entity, new_start, new_end)] = id2label[record][2:]
+						ttup = (real_entity, id2label[record][2:], new_start, new_end)
+						if ttup in ret_dic:
+							ret_dic[ttup] += 1
+						else:
+							ret_dic[ttup] = 1
 						if truncation < 0 and entity != real_entity and ' ' not in real_entity and '　' not in real_entity and '[ U N K ]' not in entity:
 							print('wrong', filename)
 							print(entity)
@@ -225,7 +229,7 @@ class Processor:
 				para_offset += len(result)-2
 
 		# print('wrong crfs', crfs)
-		return ret_str
+		return ret_str, ret_dic
 
 	def evaluate(self, valid):
 		# get dataloader
