@@ -115,7 +115,7 @@ def padding(data, tokenizer, label2id):
 
 	return padded_data, padded_labels, follow_indices
 
-def divide_dataset(data):
+def divide_dataset(data, fold=1):
 	np.random.seed(0)
 	data_list = []
 	for i in range(len(data)):
@@ -123,11 +123,19 @@ def divide_dataset(data):
 	data_list = np.array(data_list)
 	np.random.shuffle(data_list)
 
-	return data_list[0:900], data_list[900:950], data_list[950:]
+	num_blocks = 10-fold
+	start = 100*num_blocks
+	return data_list[0:start]+data_list[start+100:], data_list[start:start+50], data_list[start+50:start+100]
+
+	# return data_list[0:900], data_list[900:950], data_list[950:]
 
 def data2pixel(data):
 	with open('data', 'wb') as f:
 		pickle.dump(data, f)
 
 if __name__ == '__main__':
-	pass
+	a = [2,3,4,5,6,7,8,9]
+	b = a[2:3]
+	b.extend(a[0:1])
+	print(b)
+	print(a[2:4]+a[0:1]+a[9:])

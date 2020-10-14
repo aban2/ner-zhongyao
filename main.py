@@ -4,11 +4,11 @@ from model_processor import Processor
 import bertcrf
 import sys
 
-train, valid, test = divide_dataset(load_pickle())
 args = {
-	'load_model':50,
+	'load_model':100,
 	'num_epoches': 3,
 	'save_epoch': 2,
+	'fold': 1,
 
 	'is_train': 0,
 	'batch_size': 1,
@@ -18,6 +18,7 @@ args = {
 	'test':test
 }
 
+train, valid, test = divide_dataset(load_pickle(), args['fold'])
 processor = Processor(args)
 
 if args['is_train'] > 0:
@@ -28,10 +29,10 @@ else:
 		filename = str(i)
 		t = processor.predict(filename)
 
-		# with open('train/'+name+'.ann', 'w', encoding='utf-8') as f:
-		# 	f.write(t)
+		with open('train/'+filename+'.ann', 'w', encoding='utf-8') as f:
+			f.write(t)
 
-		print(t)
+		# print(t)
 
 		# break
 		if t == None:

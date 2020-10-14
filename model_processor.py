@@ -19,7 +19,7 @@ class Processor:
 		if args['load_model'] <= 0:
 			self.model = BERTCRF().to(device)
 		else:
-			self.model = torch.load('models/Mod' + str(args['load_model'])).to(device)
+			self.model = torch.load('models/Mod' + str(args['fold']) + '_' + str(args['load_model'])).to(device)
 			print('load success')
 
 	def data2loader(self, data, mode, batch_size):
@@ -110,13 +110,13 @@ class Processor:
 
 			if F1+F2 > top:
 				top = F1 + F2
-				torch.save(self.model, 'models/Mod' + str(i+self.args['load_model']+1))
+				torch.save(self.model, 'models/Mod' +  str(i+self.args['load_model']+1))
 				print('save new top', top)
 
 			print('Epoch', i+self.args['load_model']+1, losses/len(train_dataloader), loss, 'F1', F1, F2, F0, time()-start_time)
 
 			if (i+1+self.args['load_model']) % self.args['save_epoch'] == 0:
-				torch.save(self.model, 'models/Mod' + str(i+self.args['load_model']+1))
+				torch.save(self.model, 'models/Mod' + str(self.args['fold']) + '_' + str(i+self.args['load_model']+1))
 				# torch.save(optimizer.state_dict(), 'models/Opt' + str(i+self.args['load_model']+1))
 			start_time = time()
 
@@ -124,6 +124,10 @@ class Processor:
 		# read
 		with open('chusai_xuanshou/'+filename+'.txt', 'r', encoding='utf-8') as f:
 			content = f.read()
+
+		# a = self.model.crf.transitions
+		# print(a)
+		# sys.exit()
 
 		# predict
 		space = ','
@@ -174,11 +178,11 @@ class Processor:
 						entity += word
 					elif record > 1 and c != record:
 						# check crf:
-						# if c > 1 and (c & 1 == 0):
-						# 	print(result)
-						# 	crfs = 1
-						# 	print('wrong crf')
-						# 	return
+						if c > 1 and (c & 1 == 0):
+							crfs = 1
+							# print(result)
+							# print('wrong crf')
+							# return
 
 						extra = '\n'
 						if ret_str == '':
@@ -220,6 +224,7 @@ class Processor:
 							entity = ''
 				para_offset += len(result)-2
 
+		# print('wrong crfs', crfs)
 		return ret_str
 
 	def evaluate(self, valid):
