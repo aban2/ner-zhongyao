@@ -4,11 +4,14 @@ from model_processor import Processor
 import bertcrf
 import sys
 
+fold = 1
+train, valid, test = divide_dataset(load_pickle(), fold=fold)
+
 args = {
 	'load_model':100,
 	'num_epoches': 3,
 	'save_epoch': 2,
-	'fold': 1,
+	'fold': fold,
 
 	'is_train': 0,
 	'batch_size': 1,
@@ -18,7 +21,6 @@ args = {
 	'test':test
 }
 
-train, valid, test = divide_dataset(load_pickle(), args['fold'])
 processor = Processor(args)
 
 if args['is_train'] > 0:
