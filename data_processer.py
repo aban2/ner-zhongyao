@@ -125,9 +125,7 @@ def divide_dataset(data, fold=1):
 
 	num_blocks = 10-fold
 	start = 100*num_blocks
-	a = data_list[0:start]
-	if fold > 1:
-		a += data_list[start+100:]
+	a = np.vstack([data_list[0:start], data_list[start+100:]])
 
 	return a, data_list[start:start+50], data_list[start+50:start+100]
 

@@ -4,7 +4,7 @@ from model_processor import Processor
 import bertcrf
 import sys
 
-fold = 1
+fold = 2
 train, valid, test = divide_dataset(load_pickle(), fold=fold)
 
 args = {
