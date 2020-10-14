@@ -11,7 +11,7 @@ args = {
 	'save_epoch': 2,
 
 	'is_train': 1,
-	'batch_size': 16,
+	'batch_size': 1,
 	'max_grad_norm': 1.0,
 	'train':train,
 	'valid':valid,

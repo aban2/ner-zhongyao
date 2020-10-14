@@ -224,7 +224,7 @@ class Processor:
 	def evaluate(self, valid):
 		# get dataloader
 		batch_size = 64
-		dataloader, followed = self.data2loader(self.args['valid'], 'valid', batch_size=batch_size)
+		dataloader, followed = self.data2loader(valid, 'valid', batch_size=batch_size)
 
 		self.model.eval()
 		with torch.no_grad():
