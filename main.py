@@ -11,12 +11,12 @@ fold = 2
 train, valid, test = divide_dataset(load_pickle(), fold=fold)
 
 args = {
-	'load_model':100,
-	'num_epoches': 3,
-	'save_epoch': 2,
+	'load_model':0,
+	'num_epoches': 1,
+	'save_epoch': 1,
 	'fold': fold,
 
-	'is_train': 0,
+	'is_train': 1,
 	'batch_size': 1,
 	'max_grad_norm': 1.0,
 	'train':train,
