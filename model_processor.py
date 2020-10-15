@@ -113,6 +113,10 @@ class Processor:
 				torch.save(self.model, 'models/Mod' + str(self.args['fold']) + '_' + str(i+self.args['load_model']+1))
 				print('save new top', top)
 
+			# 特殊情况，存100
+			if (i+1+self.args['load_model']) == 100:
+				torch.save(self.model, 'models/Mod' + str(self.args['fold']) + '_' + str(i+self.args['load_model']+1))
+				
 			print('Epoch', i+self.args['load_model']+1, losses/len(train_dataloader), loss, 'F1', F1, F2, F0, time()-start_time)
 
 			if (i+1+self.args['load_model']) % self.args['save_epoch'] == 0:
