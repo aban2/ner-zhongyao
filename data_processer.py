@@ -128,6 +128,7 @@ def divide_dataset(data, fold=1):
 	a = np.vstack([data_list[0:start], data_list[start+100:]])
 
 	return a, data_list[start:start+50], data_list[start+50:start+100]
+	print('valid', start, start+50, 'test', start+50, start+100)
 
 	# return data_list[0:900], data_list[900:950], data_list[950:]
 
