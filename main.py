@@ -1,6 +1,8 @@
 from data_loader import get_train_data, load_pickle
 from data_processer import divide_dataset
 from model_processor import Processor
+from time import time
+import pickle
 import bertcrf
 import os
 import sys
@@ -31,26 +33,38 @@ else:
 	models = []
 	fileList = os.listdir('models')
 	for idx, file in enumerate(fileList):
-		models.append(file)
+		if '_100' in file:
+			models.append(file)
+
+	print(models)
+
+	id2dict = {}
 
 	for i in range(1000, 1500):
-		print(i)
+		start_time = time()
+
 		filename = str(i)
 
 		ret_dic = {}
 		for model in models:
 			_, ret_dic = processor.predict(filename, ret_dic, model)
+			# break
 			# print('hi')
+
+		id2dict[i] = ret_dic
 
 		# with open('train/'+filename+'.ann', 'w', encoding='utf-8') as f:
 		# 	f.write(t)
 
-		# print(t)
 		# for key in ret_dic:
 		# 	print(key ,ret_dic[key])
 		# print()
+		print(i, time()-start_time)
 
 		# break
 		if ret_dic == None:
 			print('oh')
 			break
+
+	with open('final_dic.pkl', 'wb') as f:
+		pickle.dump(id2dict, f)

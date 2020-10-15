@@ -78,7 +78,7 @@ class Processor:
 		)
 
 		# training
-		top = 1.3
+		top = 1.5
 		start_time = time()
 		for i in range(self.args['num_epoches']):
 			self.model.train()
@@ -133,7 +133,7 @@ class Processor:
 		# predict
 		space = ','
 		content2 = content.replace(' ', space).replace('　', space)
-		content2 = list(content)
+		content2 = list(content2)
 		if len(content2) > 510:
 			data_list = split_data(content2)
 		else:
@@ -142,7 +142,7 @@ class Processor:
 		ret_str = ''
 		ct = 1
 		self.model.eval()
-		para_offset = 0
+		para_offset = -1
 		offsets = []
 		space_ct = -1
 
@@ -154,7 +154,7 @@ class Processor:
 				offsets.append(space_ct)
 
 
-		stop_words = ['.', ',', '(', ')', '。', '，','、', '（','）', ':', '：', ' ', '　']
+		stop_words = ['.', ',', '(', ')', '。', '，','、', '（','）', ':', '：', ' ', '　', '；']
 		crfs = 0
 		with torch.no_grad():
 			for kdx, data in enumerate(data_list):
@@ -187,7 +187,7 @@ class Processor:
 						extra = '\n'
 						if ret_str == '':
 							extra = ''
-						offset = offsets[record_pos+para_offset] + para_offset
+						offset = para_offset# + offsets[record_pos+para_offset]
 						new_start, new_end = record_pos+offset, idx+offset
 						real_entity = ''.join(content[new_start:new_end])
 
@@ -205,7 +205,7 @@ class Processor:
 						# if truncation > 0:
 							# print('hi')
 						ret_str += extra + 'T' + str(ct) + '\t' + id2label[record][2:] + ' ' + str(new_start) + ' ' + str(new_end) + '\t' + real_entity
-						ttup = (real_entity, id2label[record][2:], new_start, new_end)
+						ttup = (id2label[record][2:], new_start, new_end, real_entity)
 						if ttup in ret_dic:
 							ret_dic[ttup] += 1
 						else:
