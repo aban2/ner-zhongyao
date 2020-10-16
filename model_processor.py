@@ -52,14 +52,7 @@ class Processor:
 			{'params':[p for n, p in param_optimizer if 'crf.transitions' == n], 'lr':3e-2}
 		]
 
-		# for i in param_optimizer:
-		# 	if 'crf.transitions' == i[0]:
-		# 		print(i[1].shape)
-		# sys.exit()
-
-		optimizer = AdamW(
-			optimizer_grouped_parameters, lr=3e-5, eps=1e-8
-		)
+		optimizer = AdamW(optimizer_grouped_parameters, lr=3e-5, eps=1e-8)
 
 		if self.args['load_model'] > 0:
 			optimizer.load_state_dict(torch.load('models/Opt' + str(self.args['load_model'])))
@@ -112,16 +105,12 @@ class Processor:
 				top = F1 + F2
 				torch.save(self.model, 'models/Mod' + str(self.args['fold']) + '_' + str(i+self.args['load_model']+1))
 				print('save new top', top)
-
-			# 特殊情况，存100
-			if (i+1+self.args['load_model']) == 100:
-				torch.save(self.model, 'models/Mod' + str(self.args['fold']) + '_' + str(i+self.args['load_model']+1))
 				
 			print('Epoch', i+self.args['load_model']+1, losses/len(train_dataloader), loss, 'F1', F1, F2, F0, time()-start_time)
 
 			if (i+1+self.args['load_model']) % self.args['save_epoch'] == 0:
 				torch.save(self.model, 'models/Mod' + str(self.args['fold']) + '_' + str(i+self.args['load_model']+1))
-				# torch.save(optimizer.state_dict(), 'models/Opt' + str(i+self.args['load_model']+1))
+				torch.save(optimizer.state_dict(), 'models/Opt' + str(i+self.args['load_model']+1))
 			start_time = time()
 
 
