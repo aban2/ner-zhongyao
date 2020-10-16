@@ -110,7 +110,7 @@ class Processor:
 
 			if (i+1+self.args['load_model']) % self.args['save_epoch'] == 0:
 				torch.save(self.model, 'models/Mod' + str(self.args['fold']) + '_' + str(i+self.args['load_model']+1))
-				torch.save(optimizer.state_dict(), 'models/Opt' + str(i+self.args['load_model']+1))
+				torch.save(optimizer.state_dict(), 'models/Opt' + str(self.args['fold']) + '_' + str(i+self.args['load_model']+1))
 			start_time = time()
 
 

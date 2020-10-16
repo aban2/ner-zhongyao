@@ -16,7 +16,7 @@ args = {
 	'save_epoch': 1,
 	'fold': fold,
 
-	'is_train': 1,
+	'is_train': 0,
 	'batch_size': 1,
 	'max_grad_norm': 1.0,
 	'train':train,
@@ -33,7 +33,7 @@ else:
 	models = []
 	fileList = os.listdir('models')
 	for idx, file in enumerate(fileList):
-		if '_100' in file:
+		if '_300' in file:
 			models.append(file)
 
 	print(models)
@@ -66,5 +66,5 @@ else:
 			print('oh')
 			break
 
-	with open('final_dic.pkl', 'wb') as f:
+	with open('300_dic.pkl', 'wb') as f:
 		pickle.dump(id2dict, f)

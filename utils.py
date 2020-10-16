@@ -44,12 +44,11 @@ label2id, id2label = load_label_dic()
 
 if __name__ == '__main__':
 
-	blade = 5
-
-	with open('final_dic.pkl', 'rb') as f:
+	with open('300_dic.pkl', 'rb') as f:
 		dic = pickle.load(f)
 
-	# check f
+	## check f
+	blade = 3
 	# dics = {}
 	# for i in dic:
 	# 	dic2 = dic[i]
@@ -62,9 +61,8 @@ if __name__ == '__main__':
 	# sums = 0
 	# for t in dics:
 	# 	# print(t, len(dics[t]))
-	# 	if t >= 6:
+	# 	if t >= blade:
 	# 		sums += len(dics[t])
-	
 	# print(sums/500)
 
 	for i in dic:
