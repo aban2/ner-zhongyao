@@ -14,8 +14,9 @@ args = {
 	'load_model':0,
 	'num_epoches': 1,
 	'save_epoch': 1,
-	'fold': fold,
+	'learning_rate': 3e-4,
 
+	'fold': fold,
 	'is_train': 0,
 	'batch_size': 1,
 	'max_grad_norm': 1.0,
@@ -66,5 +67,5 @@ else:
 			print('oh')
 			break
 
-	with open('300_dic.pkl', 'wb') as f:
+	with open('100_dic.pkl', 'wb') as f:
 		pickle.dump(id2dict, f)

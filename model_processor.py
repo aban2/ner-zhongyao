@@ -52,7 +52,7 @@ class Processor:
 			{'params':[p for n, p in param_optimizer if 'crf.transitions' == n], 'lr':3e-2}
 		]
 
-		optimizer = AdamW(optimizer_grouped_parameters, lr=3e-5, eps=1e-8)
+		optimizer = AdamW(optimizer_grouped_parameters, lr=self.args['learning_rate'], eps=1e-8)
 
 		if self.args['load_model'] > 0:
 			optimizer.load_state_dict(torch.load('models/Opt' + str(self.args['load_model'])))
