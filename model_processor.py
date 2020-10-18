@@ -71,7 +71,8 @@ class Processor:
 		)
 
 		# training
-		top = 1.5
+		top = 0
+		stop = 0
 		start_time = time()
 		for i in range(self.args['num_epoches']):
 			self.model.train()
@@ -103,14 +104,19 @@ class Processor:
 
 			if F1+F2 > top:
 				top = F1 + F2
-				torch.save(self.model, 'models/Mod' + str(self.args['fold']) + '_' + str(i+self.args['load_model']+1))
+				# torch.save(self.model, 'models/Mod' + str(self.args['fold']) + '_' + str(i+self.args['load_model']+1))
 				print('save new top', top)
+				stop = 0
+			else:
+				if stop > 7:
+					return
+				stop += 1
 				
 			print('Epoch', i+self.args['load_model']+1, losses/len(train_dataloader), loss, 'F1', F1, F2, F0, time()-start_time)
 
 			if (i+1+self.args['load_model']) % self.args['save_epoch'] == 0:
 				torch.save(self.model, 'models/Mod' + str(self.args['fold']) + '_' + str(i+self.args['load_model']+1))
-				torch.save(optimizer.state_dict(), 'models/Opt' + str(self.args['fold']) + '_' + str(i+self.args['load_model']+1))
+				# torch.save(optimizer.state_dict(), 'models/Opt' + str(self.args['fold']) + '_' + str(i+self.args['load_model']+1))
 			start_time = time()
 
 
