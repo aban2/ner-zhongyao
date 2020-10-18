@@ -104,7 +104,7 @@ class Processor:
 
 			if F1+F2 > top:
 				top = F1 + F2
-				# torch.save(self.model, 'models/Mod' + str(self.args['fold']) + '_' + str(i+self.args['load_model']+1))
+				torch.save(self.model, 'models/Mod' + str(self.args['fold']) + '_' + str(i+self.args['load_model']+1))
 				print('save new top', top)
 				stop = 0
 			else:
