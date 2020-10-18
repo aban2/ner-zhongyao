@@ -2,6 +2,7 @@
 import re
 import sys
 import torch
+import copy
 import numpy as np
 from utils import *
 from time import time
@@ -73,6 +74,7 @@ class Processor:
 		# training
 		top = 0
 		stop = 0
+		best_model = None
 		start_time = time()
 		for i in range(self.args['num_epoches']):
 			self.model.train()
@@ -104,11 +106,13 @@ class Processor:
 
 			if F1+F2 > top:
 				top = F1 + F2
-				torch.save(self.model, 'models/Mod' + str(self.args['fold']) + '_' + str(i+self.args['load_model']+1))
+				# torch.save(self.model, 'models/Mod' + str(self.args['fold']) + '_' + str(i+self.args['load_model']+1))
+				best_model = copy.deepcopy(self.model)
 				print('save new top', top)
 				stop = 0
 			else:
 				if stop > 7:
+					torch.save(best_model, 'models/Mod' + str(self.args['fold']) + '_' + str(i+self.args['load_model']+1))
 					return
 				stop += 1
 				
