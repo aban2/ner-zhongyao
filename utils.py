@@ -44,26 +44,26 @@ label2id, id2label = load_label_dic()
 
 if __name__ == '__main__':
 
-	with open('300_dic.pkl', 'rb') as f:
+	with open('5e-5crf.pkl', 'rb') as f:
 		dic = pickle.load(f)
 
 	## check f
-	blade = 3
-	# dics = {}
-	# for i in dic:
-	# 	dic2 = dic[i]
-	# 	for j in dic2:
-	# 		if dic2[j] in dics:
-	# 			dics[dic2[j]].append(j[3])
-	# 		else:
-	# 			dics[dic2[j]] = [j[3]]
+	blade = 6
+	dics = {}
+	for i in dic:
+		dic2 = dic[i]
+		for j in dic2:
+			if dic2[j] in dics:
+				dics[dic2[j]].append(j[3])
+			else:
+				dics[dic2[j]] = [j[3]]
 
-	# sums = 0
-	# for t in dics:
-	# 	# print(t, len(dics[t]))
-	# 	if t >= blade:
-	# 		sums += len(dics[t])
-	# print(sums/500)
+	sums = 0
+	for t in dics:
+		# print(t, len(dics[t]))
+		if t >= blade:
+			sums += len(dics[t])
+	print(sums/500)
 
 	for i in dic:
 		with open('train/'+str(i)+'.ann', 'w', encoding='utf-8') as f:
@@ -72,7 +72,7 @@ if __name__ == '__main__':
 			for idx, j in enumerate(dic2):
 				if dic2[j] < blade:
 					continue
-				if idx == 0:
+				if ct == 1:
 					extra = ''
 				else:
 					extra = '\n'

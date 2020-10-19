@@ -15,14 +15,15 @@ args = {
 	'num_epoches': 1,
 	'save_epoch': 1,
 	'learning_rate': 3e-4,
+	'use_crf': False,
 
-	'fold': fold,
-	'is_train': 0,
+	'is_train': 1,
 	'batch_size': 1,
 	'max_grad_norm': 1.0,
 	'train':train,
 	'valid':valid,
-	'test':test
+	'test':test,
+	'fold': fold
 }
 
 processor = Processor(args)
@@ -32,10 +33,10 @@ if args['is_train'] > 0:
 else:
 	# get model list
 	models = []
-	fileList = os.listdir('models')
+	fileList = os.listdir('models/5e-5+crf')
 	for idx, file in enumerate(fileList):
-		if '_300' in file:
-			models.append(file)
+		# if '_300' in file:
+		models.append(file)
 
 	print(models)
 
@@ -67,5 +68,5 @@ else:
 			print('oh')
 			break
 
-	with open('100_dic.pkl', 'wb') as f:
+	with open('5e-5crf.pkl', 'wb') as f:
 		pickle.dump(id2dict, f)

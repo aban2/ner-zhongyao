@@ -18,7 +18,7 @@ class Processor:
 		self.tokenizer = BertTokenizer.from_pretrained('bert-base-chinese')
 		self.args = args
 		if args['load_model'] <= 0:
-			self.model = BERTCRF().to(device)
+			self.model = BERTCRF(args['use_crf']).to(device)
 		else:
 			self.model = torch.load('models/Mod' + str(args['fold']) + '_' + str(args['load_model'])).to(device)
 			print('load success')
@@ -127,7 +127,7 @@ class Processor:
 	def predict(self, filename, ret_dic, model_name=None):
 
 		if model_name:
-			self.model = torch.load('models/'+model_name)
+			self.model = torch.load('models/5e-5+crf/'+model_name)
 
 		# read
 		with open('chusai_xuanshou/'+filename+'.txt', 'r', encoding='utf-8') as f:
